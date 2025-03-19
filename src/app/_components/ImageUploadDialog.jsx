@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import * as exifr from "exifr"; // ✅ Better EXIF extraction
+import * as exifr from "exifr"; // ✅ Use exifr for better EXIF support
 
 export default function LocationExtractor() {
   const [isOpen, setIsOpen] = useState(false);
@@ -10,7 +10,7 @@ export default function LocationExtractor() {
   const [preview, setPreview] = useState(null);
   const [message, setMessage] = useState("");
 
-  // Handle Image Upload & Extract GPS Data
+  // Function to extract location metadata from the image
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -23,8 +23,10 @@ export default function LocationExtractor() {
     setPreview(URL.createObjectURL(file));
 
     try {
-      // ✅ Extract metadata with `exifr`
+      // ✅ Extract metadata using exifr
       const metadata = await exifr.parse(file);
+      console.log("EXIF Metadata:", metadata); // Debugging output
+
       if (!metadata || !metadata.GPSLatitude || !metadata.GPSLongitude) {
         setMessage("⚠️ No location data found in this image.");
         setLatitude(null);
@@ -43,10 +45,8 @@ export default function LocationExtractor() {
 
   return (
     <div className="flex flex-col items-center justify-center h-screen">
-      {/* Upload Button to Open Dialog */}
       <Button onClick={() => setIsOpen(true)}>Upload Image</Button>
 
-      {/* Dialog Component */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="z-[100] bg-white max-w-md w-full p-6 rounded-lg">
           <DialogHeader>
@@ -54,20 +54,22 @@ export default function LocationExtractor() {
           </DialogHeader>
 
           <label className="block border-2 border-dashed p-4 text-center cursor-pointer hover:border-gray-500 transition">
-            <p className="text-gray-600">
-              {preview ? "Change image" : "Click to upload an image"}
-            </p>
+            <p className="text-gray-600">{preview ? "Change image" : "Click to upload an image"}</p>
             <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
           </label>
 
           {/* Message Display */}
           {message && <p className="text-center text-sm mt-2">{message}</p>}
 
-          {/* Image Preview */}
+          {/* Image Preview & Coordinates */}
           {preview && (
             <div className="mt-2 text-center">
               <img src={preview} alt="Preview" className="w-full h-auto rounded-md max-h-64 object-cover" />
-              <p className="text-gray-600 mt-2">📍 {latitude}, {longitude}</p>
+              {latitude && longitude ? (
+                <p className="text-gray-600 mt-2">📍 {latitude}, {longitude}</p>
+              ) : (
+                <p className="text-red-500 mt-2">⚠️ No GPS data detected.</p>
+              )}
             </div>
           )}
 
