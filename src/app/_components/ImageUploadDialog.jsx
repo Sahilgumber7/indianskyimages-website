@@ -3,7 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import * as exifr from "exifr"; // ✅ Better EXIF extraction
 
-export default function LocationExtractorDialog({ isOpen, setIsOpen }) {
+export default function LocationExtractor() {
+  const [isOpen, setIsOpen] = useState(false);
   const [latitude, setLatitude] = useState(null);
   const [longitude, setLongitude] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -41,34 +42,40 @@ export default function LocationExtractorDialog({ isOpen, setIsOpen }) {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="bg-white max-w-md w-full p-6 rounded-lg">
-        <DialogHeader>
-          <DialogTitle>Extract Location from Image</DialogTitle>
-        </DialogHeader>
+    <div className="flex flex-col items-center justify-center h-screen">
+      {/* Upload Button to Open Dialog */}
+      <Button onClick={() => setIsOpen(true)}>Upload Image</Button>
 
-        <label className="block border-2 border-dashed p-4 text-center cursor-pointer hover:border-gray-500 transition">
-          <p className="text-gray-600">
-            {preview ? "Change image" : "Click to upload an image"}
-          </p>
-          <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-        </label>
+      {/* Dialog Component */}
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="z-[100] bg-white max-w-md w-full p-6 rounded-lg">
+          <DialogHeader>
+            <DialogTitle>Extract Location from Image</DialogTitle>
+          </DialogHeader>
 
-        {/* Message Display */}
-        {message && <p className="text-center text-sm mt-2">{message}</p>}
+          <label className="block border-2 border-dashed p-4 text-center cursor-pointer hover:border-gray-500 transition">
+            <p className="text-gray-600">
+              {preview ? "Change image" : "Click to upload an image"}
+            </p>
+            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+          </label>
 
-        {/* Image Preview */}
-        {preview && (
-          <div className="mt-2 text-center">
-            <img src={preview} alt="Preview" className="w-full h-auto rounded-md max-h-64 object-cover" />
-            <p className="text-gray-600 mt-2">📍 {latitude}, {longitude}</p>
-          </div>
-        )}
+          {/* Message Display */}
+          {message && <p className="text-center text-sm mt-2">{message}</p>}
 
-        <DialogFooter className="flex justify-end mt-4">
-          <Button variant="secondary" onClick={() => setIsOpen(false)}>Close</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          {/* Image Preview */}
+          {preview && (
+            <div className="mt-2 text-center">
+              <img src={preview} alt="Preview" className="w-full h-auto rounded-md max-h-64 object-cover" />
+              <p className="text-gray-600 mt-2">📍 {latitude}, {longitude}</p>
+            </div>
+          )}
+
+          <DialogFooter className="flex justify-end mt-4">
+            <Button variant="secondary" onClick={() => setIsOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
