@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import * as exifr from "exifr"; // ✅ Ensure you have exifr installed
+import * as exifr from "exifr"; // Ensure exifr is installed
 
 export default function LocationExtractor() {
   const [isOpen, setIsOpen] = useState(false);
@@ -10,15 +10,15 @@ export default function LocationExtractor() {
   const [preview, setPreview] = useState(null);
   const [message, setMessage] = useState("");
 
-  // Convert GPS DMS to Decimal
+  // Convert DMS format to Decimal format
   const convertDMSToDecimal = (dms, ref) => {
     if (!dms || dms.length < 3) return NaN; // Ensure valid data
     let decimal = dms[0] + dms[1] / 60 + dms[2] / 3600;
     if (ref === "S" || ref === "W") decimal *= -1; // Handle negative values
-    return decimal.toFixed(6); // ✅ Return 6 decimal places for accuracy
+    return decimal.toFixed(6); // Return 6 decimal places for accuracy
   };
 
-  // Function to extract location metadata from the image
+  // Extract GPS metadata
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -31,23 +31,35 @@ export default function LocationExtractor() {
     setPreview(URL.createObjectURL(file));
 
     try {
-      // ✅ Extract metadata using exifr
-      const metadata = await exifr.parse(file);
+      // ✅ Extract metadata
+      const metadata = await exifr.parse(file, { gps: true });
       console.log("EXIF Metadata:", metadata); // Debugging output
 
-      if (!metadata || !metadata.GPSLatitude || !metadata.GPSLongitude) {
-        setMessage("⚠️ No location data found in this image.");
-        setLatitude(null);
-        setLongitude(null);
-        return;
+      let lat = null, lon = null;
+
+      // ✅ Try standard GPSLatitude & GPSLongitude (DMS format)
+      if (metadata.GPSLatitude && metadata.GPSLongitude) {
+        lat = convertDMSToDecimal(metadata.GPSLatitude, metadata.GPSLatitudeRef);
+        lon = convertDMSToDecimal(metadata.GPSLongitude, metadata.GPSLongitudeRef);
+      }
+      // ✅ Some Android devices store GPS as direct decimal coordinates
+      else if (metadata.latitude && metadata.longitude) {
+        lat = metadata.latitude.toFixed(6);
+        lon = metadata.longitude.toFixed(6);
+      }
+      // ✅ Some Android devices store GPS as "GPSPosition"
+      else if (metadata.GPSPosition) {
+        const gpsArray = metadata.GPSPosition.split(" ");
+        if (gpsArray.length === 2) {
+          lat = parseFloat(gpsArray[0]).toFixed(6);
+          lon = parseFloat(gpsArray[1]).toFixed(6);
+        }
       }
 
-      // Convert DMS to Decimal
-      const lat = convertDMSToDecimal(metadata.GPSLatitude, metadata.GPSLatitudeRef);
-      const lon = convertDMSToDecimal(metadata.GPSLongitude, metadata.GPSLongitudeRef);
-
-      if (isNaN(lat) || isNaN(lon)) {
-        setMessage("⚠️ Invalid GPS data found.");
+      if (!lat || !lon || isNaN(lat) || isNaN(lon)) {
+        setMessage("⚠️ No valid GPS data found.");
+        setLatitude(null);
+        setLongitude(null);
         return;
       }
 
