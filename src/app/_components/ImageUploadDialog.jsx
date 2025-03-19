@@ -12,15 +12,6 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
 
-  // Convert DMS (Degrees, Minutes, Seconds) to decimal format
-  const convertDMSToDecimal = (dms, ref) => {
-    if (!dms) return null;
-    let decimal = dms[0] + dms[1] / 60 + dms[2] / 3600;
-    if (ref === "S" || ref === "W") decimal *= -1; // South & West are negative
-    return decimal;
-  };
-
-  // Handle image selection & extract GPS metadata
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -30,25 +21,22 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
     setPreview(URL.createObjectURL(file));
 
     try {
-      // Extract EXIF metadata
-      const metadata = await exifr.parse(file);
-      console.log("Extracted Metadata:", metadata);
-
-      // Extract latitude & longitude
-      let lat = metadata?.latitude || convertDMSToDecimal(metadata?.GPSLatitude, metadata?.GPSLatitudeRef);
-      let lon = metadata?.longitude || convertDMSToDecimal(metadata?.GPSLongitude, metadata?.GPSLongitudeRef);
-
-      if (!lat || !lon) {
-        setMessage({ text: "⚠️ This image has no location data! You can't upload it.", type: "error" });
-        setLatitude(null);
-        setLongitude(null);
-        return;
+      let metadata = await exifr.gps(file); // Faster for GPS-only data
+      if (!metadata) {
+        metadata = await exifr.parse(file); // Fallback for full metadata extraction
       }
 
-      // Clear error message & set location data
-      setMessage({ text: "" });
-      setLatitude(lat);
-      setLongitude(lon);
+      console.log("Extracted Metadata:", metadata); // Debugging log
+
+      if (!metadata || !metadata.latitude || !metadata.longitude) {
+        setMessage({ text: "⚠️ No location data found! You can still upload.", type: "error" });
+        setLatitude(null);
+        setLongitude(null);
+      } else {
+        setLatitude(metadata.latitude);
+        setLongitude(metadata.longitude);
+        setMessage({ text: "✅ Location data found!", type: "success" });
+      }
     } catch (error) {
       console.error("EXIF Parsing Error:", error);
       setMessage({ text: "⚠️ Error reading image metadata. Try a different image.", type: "error" });
@@ -57,18 +45,15 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
     }
   };
 
-  // Upload to Supabase Storage & save metadata to "images" table
   const handleUpload = async () => {
-    if (!image || !latitude || !longitude) return;
+    if (!image) return;
     setUploading(true);
 
     const fileExt = image.name.split(".").pop();
     const fileName = `${Date.now()}.${fileExt}`;
 
-    // Upload to Supabase Storage (Bucket: sky-images)
-    const { data, error } = await supabase.storage
-      .from("sky-images")
-      .upload(fileName, image);
+    // Upload to Supabase Storage
+    const { data, error } = await supabase.storage.from("sky-images").upload(fileName, image);
 
     if (error) {
       setMessage({ text: "❌ Upload failed. Please try again.", type: "error" });
@@ -81,12 +66,7 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
     // Insert into "images" table
     const { error: insertError } = await supabase
       .from("images")
-      .insert([{ 
-        image_url: imageUrl, 
-        latitude, 
-        longitude, 
-        uploaded_at: new Date() 
-      }]);
+      .insert([{ image_url: imageUrl, latitude, longitude, uploaded_at: new Date() }]);
 
     if (insertError) {
       setMessage({ text: "❌ Database save failed. Please try again.", type: "error" });
@@ -97,7 +77,6 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
     // Show success message
     setMessage({ text: "✅ Image uploaded successfully!", type: "success" });
 
-    // Close dialog after 1 second
     setTimeout(() => {
       setIsDialogOpen(false);
       setImage(null);
@@ -115,7 +94,7 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
         <DialogHeader>
           <DialogTitle className="text-lg sm:text-xl">Upload Sky Image</DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-gray-500">Only images with location metadata accepted.</p>
+        <p className="text-sm text-gray-500 text-center">Only images with location metadata are verified.</p>
         <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-400 rounded-lg cursor-pointer hover:border-gray-500 transition p-4 text-center">
           <p className="text-sm text-gray-600">
             {preview ? "Click to change image" : "Click to upload or drag an image"}
@@ -134,7 +113,11 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
         {preview && (
           <div className="mt-2 flex flex-col items-center">
             <img src={preview} alt="Preview" className="w-full h-auto rounded-md max-h-64 object-cover" />
-            <p className="text-md text-gray-600 mt-2 text-center">📍 {latitude}, {longitude}</p>
+            {latitude && longitude ? (
+              <p className="text-md text-gray-600 mt-2 text-center">📍 {latitude}, {longitude}</p>
+            ) : (
+              <p className="text-md text-gray-600 mt-2 text-center">⚠️ No GPS data detected</p>
+            )}
             <hr className="my-4 border-gray-300 w-full" />
           </div>
         )}
@@ -143,7 +126,7 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
           <Button variant="secondary" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
             Cancel
           </Button>
-          <Button onClick={handleUpload} disabled={uploading || !latitude || !longitude} className="w-full sm:w-auto">
+          <Button onClick={handleUpload} disabled={uploading} className="w-full sm:w-auto">
             {uploading ? "Uploading..." : "Upload"}
           </Button>
         </DialogFooter>
