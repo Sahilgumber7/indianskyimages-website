@@ -37,7 +37,7 @@ export default function MapView({ dialogOpen }) {
           return (
             <Marker key={img.id} position={[img.latitude, img.longitude]} icon={customIcon}>
               <Popup>
-                <img src={img.image_url} alt="Sky" className="w--full h-full rounded-md" />
+                <img src={img.image_url} alt="Sky" className="w-full h-80 rounded-md" />
                 <p className="text-sm text-gray-600 mt-2">📍 {img.latitude}, {img.longitude}</p>
               </Popup>
             </Marker>
