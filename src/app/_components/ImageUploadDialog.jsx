@@ -129,7 +129,7 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
           <p className="text-sm text-gray-600">
             {preview ? "Click to change image" : "Click to upload or drag an image"}
           </p>
-          <<input type="file" accept="image/*" capture="enviornment" onChange={handleFileChange} className="hidden" />>
+          <input type="file" accept="image/*" capture="enviornment" onChange={handleFileChange} className="hidden" />
         </label>
 
         {/* Display Message (Error or Success) */}
