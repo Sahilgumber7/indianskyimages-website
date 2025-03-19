@@ -23,16 +23,18 @@ export default function MapView({ dialogOpen }) {
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
         {images.map((img) => {
-          // Create a custom marker using the image
-          // Circular thumbnail marker
+          
           const customIcon = new L.DivIcon({
             className: "custom-marker",
-            html: `<div class="w-12 h-12 overflow-hidden rounded-full border-2 border-white shadow-md">
-                     <img src="${img.image_url}" class="w-full h-full object-cover" />
+            html: `<div class="w-12 h-12 flex items-center justify-center overflow-hidden rounded-full border-2 border-white shadow-md">
+                     <img src="${img.image_url}" class="w-full h-full object-cover scale-150" />
                    </div>`,
-            iconSize: [64, 64], // Circular marker size (48px)
-            iconAnchor: [24, 24], // Center the icon
+            iconSize: [64, 64], // Ensures proper size for the marker
+            iconAnchor: [24, 24], // Keeps it centered
           });
+          
+          
+          
 
           return (
             <Marker key={img.id} position={[img.latitude, img.longitude]} icon={customIcon}>

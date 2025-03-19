@@ -12,24 +12,49 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
 
+  // Convert DMS (Degrees, Minutes, Seconds) to decimal format
+  const convertDMSToDecimal = (dms, ref) => {
+    if (!dms) return null;
+    let decimal = dms[0] + dms[1] / 60 + dms[2] / 3600;
+    if (ref === "S" || ref === "W") decimal *= -1; // South & West are negative
+    return decimal;
+  };
+
   // Handle image selection & extract GPS metadata
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
-    // Extract EXIF metadata (GPS info)
-    const metadata = await exifr.gps(file);
+    try {
+      // Extract EXIF metadata
+      const metadata = await exifr.parse(file);
+      console.log("Extracted Metadata:", metadata); // Debugging log
 
-    if (!metadata || !metadata.latitude || !metadata.longitude) {
-      setMessage({ text: "⚠️ This image has no location data! Please select another image.", type: "error" });
-      return;
+      // Ensure GPS data is available
+      if (!metadata || (!metadata.latitude && !metadata.GPSLatitude)) {
+        setMessage({ text: "⚠️ This image has no location data! Please select another image.", type: "error" });
+        return;
+      }
+
+      // Extract latitude & longitude correctly
+      let lat = metadata.latitude || convertDMSToDecimal(metadata.GPSLatitude, metadata.GPSLatitudeRef);
+      let lon = metadata.longitude || convertDMSToDecimal(metadata.GPSLongitude, metadata.GPSLongitudeRef);
+
+      if (!lat || !lon) {
+        setMessage({ text: "⚠️ Could not extract location data. Please try another image.", type: "error" });
+        return;
+      }
+
+      setMessage({ text: "" });
+      setImage(file);
+      setPreview(URL.createObjectURL(file));
+      setLatitude(lat);
+      setLongitude(lon);
+
+    } catch (error) {
+      console.error("EXIF Parsing Error:", error);
+      setMessage({ text: "⚠️ Error reading image metadata. Try a different image.", type: "error" });
     }
-
-    setMessage({ text: "" });
-    setImage(file);
-    setPreview(URL.createObjectURL(file));
-    setLatitude(metadata.latitude);
-    setLongitude(metadata.longitude);
   };
 
   // Upload to Supabase Storage & save metadata to "images" table
