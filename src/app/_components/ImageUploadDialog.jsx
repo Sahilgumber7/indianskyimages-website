@@ -25,35 +25,35 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
     const file = event.target.files[0];
     if (!file) return;
 
+    // Set preview immediately
+    setImage(file);
+    setPreview(URL.createObjectURL(file));
+
     try {
       // Extract EXIF metadata
       const metadata = await exifr.parse(file);
-      console.log("Extracted Metadata:", metadata); // Debugging log
+      console.log("Extracted Metadata:", metadata);
 
-      // Ensure GPS data is available
-      if (!metadata || (!metadata.latitude && !metadata.GPSLatitude)) {
-        setMessage({ text: "⚠️ This image has no location data! Please select another image.", type: "error" });
-        return;
-      }
-
-      // Extract latitude & longitude correctly
-      let lat = metadata.latitude || convertDMSToDecimal(metadata.GPSLatitude, metadata.GPSLatitudeRef);
-      let lon = metadata.longitude || convertDMSToDecimal(metadata.GPSLongitude, metadata.GPSLongitudeRef);
+      // Extract latitude & longitude
+      let lat = metadata?.latitude || convertDMSToDecimal(metadata?.GPSLatitude, metadata?.GPSLatitudeRef);
+      let lon = metadata?.longitude || convertDMSToDecimal(metadata?.GPSLongitude, metadata?.GPSLongitudeRef);
 
       if (!lat || !lon) {
-        setMessage({ text: "⚠️ Could not extract location data. Please try another image.", type: "error" });
+        setMessage({ text: "⚠️ This image has no location data! You can't upload it.", type: "error" });
+        setLatitude(null);
+        setLongitude(null);
         return;
       }
 
+      // Clear error message & set location data
       setMessage({ text: "" });
-      setImage(file);
-      setPreview(URL.createObjectURL(file));
       setLatitude(lat);
       setLongitude(lon);
-
     } catch (error) {
       console.error("EXIF Parsing Error:", error);
       setMessage({ text: "⚠️ Error reading image metadata. Try a different image.", type: "error" });
+      setLatitude(null);
+      setLongitude(null);
     }
   };
 
@@ -115,7 +115,7 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
         <DialogHeader>
           <DialogTitle className="text-lg sm:text-xl">Upload Sky Image</DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-gray-500 text-center">Only images with location metadata accepted.</p>
+        <p className="text-sm text-gray-500">Only images with location metadata accepted.</p>
         <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-400 rounded-lg cursor-pointer hover:border-gray-500 transition p-4 text-center">
           <p className="text-sm text-gray-600">
             {preview ? "Click to change image" : "Click to upload or drag an image"}
