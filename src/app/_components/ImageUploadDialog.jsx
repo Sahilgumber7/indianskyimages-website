@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import EXIF from "exif-js";
+import piexif from "piexifjs";
 
 export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
   const [image, setImage] = useState(null);
@@ -16,11 +17,44 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
   const convertDMSToDecimal = (dms, ref) => {
     if (!dms) return null;
     let decimal = dms[0] + dms[1] / 60 + dms[2] / 3600;
-    if (ref === "S" || ref === "W") decimal *= -1; // South & West are negative
+    if (ref === "S" || ref === "W") decimal *= -1;
     return decimal;
   };
 
-  // Handle image selection & extract GPS metadata
+  // Extract GPS data using EXIF.js or Piexif.js
+  const extractGPSData = (file, base64String) => {
+    let lat = null, lon = null;
+    
+    // Try EXIF.js first
+    const exifData = EXIF.readFromBinaryFile(file);
+    if (exifData?.GPSLatitude && exifData?.GPSLongitude) {
+      lat = convertDMSToDecimal(exifData.GPSLatitude, exifData.GPSLatitudeRef);
+      lon = convertDMSToDecimal(exifData.GPSLongitude, exifData.GPSLongitudeRef);
+    }
+
+    // If EXIF.js fails, try piexif.js
+    if (!lat || !lon) {
+      try {
+        const exifObj = piexif.load(base64String);
+        if (exifObj.GPS[piexif.GPSIFD.GPSLatitude] && exifObj.GPS[piexif.GPSIFD.GPSLongitude]) {
+          lat = convertDMSToDecimal(exifObj.GPS[piexif.GPSIFD.GPSLatitude], exifObj.GPS[piexif.GPSIFD.GPSLatitudeRef]);
+          lon = convertDMSToDecimal(exifObj.GPS[piexif.GPSIFD.GPSLongitude], exifObj.GPS[piexif.GPSIFD.GPSLongitudeRef]);
+        }
+      } catch (error) {
+        console.log("Piexif.js failed:", error);
+      }
+    }
+
+    if (!lat || !lon) {
+      setMessage({ text: "❌ No location data found! Please upload another image.", type: "error" });
+    } else {
+      setMessage({ text: "✅ Location data extracted!", type: "success" });
+    }
+
+    return { lat, lon };
+  };
+
+  // Handle image selection
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -28,21 +62,10 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
     const reader = new FileReader();
     reader.onload = function (e) {
       const arrayBuffer = e.target.result;
-      const exifData = EXIF.readFromBinaryFile(arrayBuffer);
-      console.log("EXIF Data:", exifData);
+      const base64String = reader.result.split(",")[1]; // Extract Base64 for piexif.js
 
-      let lat = null, lon = null;
-
-      if (exifData?.GPSLatitude && exifData?.GPSLongitude) {
-        lat = convertDMSToDecimal(exifData.GPSLatitude, exifData.GPSLatitudeRef);
-        lon = convertDMSToDecimal(exifData.GPSLongitude, exifData.GPSLongitudeRef);
-      }
-
-      if (!lat || !lon) {
-        setMessage({ text: "❌ No location data found! Please upload another image.", type: "error" });
-      } else {
-        setMessage({ text: "✅ Location data extracted!", type: "success" });
-      }
+      // Extract GPS metadata
+      const { lat, lon } = extractGPSData(arrayBuffer, base64String);
 
       // Set state
       setImage(file);
@@ -51,7 +74,8 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
       setLongitude(lon);
     };
 
-    reader.readAsArrayBuffer(file);
+    reader.readAsArrayBuffer(file); // Needed for EXIF.js
+    reader.readAsDataURL(file); // Needed for piexif.js
   };
 
   // Upload Image to Supabase
@@ -114,14 +138,12 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
           <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
         </label>
 
-        {/* Display Message (Error or Success) */}
         {message.text && (
           <p className={`text-sm font-medium text-center ${message.type === "error" ? "text-red-500" : "text-green-500"} mt-2`}>
             {message.text}
           </p>
         )}
 
-        {/* Image Preview */}
         {preview && (
           <div className="mt-2 flex flex-col items-center">
             <img src={preview} alt="Preview" className="w-full h-auto rounded-md max-h-64 object-cover" />
