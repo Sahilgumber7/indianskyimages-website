@@ -86,12 +86,12 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-      <DialogContent className="z-[100] bg-white">  {/* 👈 FIX: Higher z-index */}
+      <DialogContent className="z-[100] bg-white max-w-md w-full mx-auto sm:max-w-lg md:max-w-xl lg:max-w-2xl p-4 sm:p-6 rounded-lg">  
         <DialogHeader>
-          <DialogTitle>Upload Sky Image</DialogTitle>
+          <DialogTitle className="text-lg sm:text-xl">Upload Sky Image</DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-gray-500">Only images with location metadata accepted.</p>
-        <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-400 rounded-lg cursor-pointer hover:border-gray-500 transition p-4">
+        <p className="text-sm text-gray-500 text-center">Only images with location metadata accepted.</p>
+        <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-400 rounded-lg cursor-pointer hover:border-gray-500 transition p-4 text-center">
           <p className="text-sm text-gray-600">
             {preview ? "Click to change image" : "Click to upload or drag an image"}
           </p>
@@ -100,25 +100,25 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
 
         {/* Display Message (Error or Success) */}
         {message.text && (
-          <p className={`text-sm font-medium ${message.type === "error" ? "text-red-500" : "text-green-500"} mt-2`}>
+          <p className={`text-sm font-medium text-center ${message.type === "error" ? "text-red-500" : "text-green-500"} mt-2`}>
             {message.text}
           </p>
         )}
 
         {/* Image Preview */}
         {preview && (
-          <div className="">
-            <img src={preview} alt="Preview" className="w-full h-auto rounded-md" />
-            <p className="text-md text-gray-600 mt-2">📍 {latitude}, {longitude}</p>
-            <hr className="my-4 border-gray-300" />
+          <div className="mt-2 flex flex-col items-center">
+            <img src={preview} alt="Preview" className="w-full h-auto rounded-md max-h-64 object-cover" />
+            <p className="text-md text-gray-600 mt-2 text-center">📍 {latitude}, {longitude}</p>
+            <hr className="my-4 border-gray-300 w-full" />
           </div>
         )}
 
-        <DialogFooter className="flex justify-end space-x-2">
-          <Button variant="secondary" onClick={() => setIsDialogOpen(false)}>
+        <DialogFooter className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 w-full">
+          <Button variant="secondary" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
             Cancel
           </Button>
-          <Button onClick={handleUpload} disabled={uploading || !latitude || !longitude}>
+          <Button onClick={handleUpload} disabled={uploading || !latitude || !longitude} className="w-full sm:w-auto">
             {uploading ? "Uploading..." : "Upload"}
           </Button>
         </DialogFooter>
