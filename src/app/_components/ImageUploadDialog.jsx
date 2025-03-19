@@ -84,7 +84,7 @@ export default function LocationExtractor() {
 
           <label className="block border-2 border-dashed p-4 text-center cursor-pointer hover:border-gray-500 transition">
             <p className="text-gray-600">{preview ? "Change image" : "Click to upload an image"}</p>
-            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" capture="filesystem"/>
           </label>
 
           {/* Message Display */}
