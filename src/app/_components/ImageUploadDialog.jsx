@@ -1,112 +1,162 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import * as exifr from "exifr"; // Ensure exifr is installed
+import { supabase } from "@/lib/supabase";
+import exifr from "exifr";
 
-export default function LocationExtractor() {
-  const [isOpen, setIsOpen] = useState(false);
+export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
+  const [image, setImage] = useState(null);
+  const [preview, setPreview] = useState(null);
   const [latitude, setLatitude] = useState(null);
   const [longitude, setLongitude] = useState(null);
-  const [preview, setPreview] = useState(null);
-  const [message, setMessage] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [message, setMessage] = useState({ text: "", type: "" });
 
-  // Convert DMS format to Decimal format
+  // Convert DMS (Degrees, Minutes, Seconds) to decimal format
   const convertDMSToDecimal = (dms, ref) => {
-    if (!dms || dms.length < 3) return NaN; // Ensure valid data
+    if (!dms) return null;
     let decimal = dms[0] + dms[1] / 60 + dms[2] / 3600;
-    if (ref === "S" || ref === "W") decimal *= -1; // Handle negative values
-    return decimal.toFixed(6); // Return 6 decimal places for accuracy
+    if (ref === "S" || ref === "W") decimal *= -1; // South & West are negative
+    return decimal;
   };
 
-  // Extract GPS metadata
-  const handleImageUpload = async (event) => {
+  // Handle image selection & extract GPS metadata
+  const handleFileChange = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      setMessage("❌ Please select a valid image file.");
-      return;
-    }
-
+    // Set preview immediately
+    setImage(file);
     setPreview(URL.createObjectURL(file));
 
     try {
-      // ✅ Extract metadata
-      const metadata = await exifr.parse(file, { gps: true });
-      console.log("EXIF Metadata:", metadata); // Debugging output
+      // Extract EXIF metadata
+      const metadata = await exifr.parse(file);
+      console.log("Extracted Metadata:", metadata);
 
-      let lat = null, lon = null;
 
-      // ✅ Try standard GPSLatitude & GPSLongitude (DMS format)
-      if (metadata.GPSLatitude && metadata.GPSLongitude) {
-        lat = convertDMSToDecimal(metadata.GPSLatitude, metadata.GPSLatitudeRef);
-        lon = convertDMSToDecimal(metadata.GPSLongitude, metadata.GPSLongitudeRef);
-      }
-      // ✅ Some Android devices store GPS as direct decimal coordinates
-      else if (metadata.latitude && metadata.longitude) {
-        lat = metadata.latitude.toFixed(6);
-        lon = metadata.longitude.toFixed(6);
-      }
-      // ✅ Some Android devices store GPS as "GPSPosition"
-      else if (metadata.GPSPosition) {
-        const gpsArray = metadata.GPSPosition.split(" ");
-        if (gpsArray.length === 2) {
-          lat = parseFloat(gpsArray[0]).toFixed(6);
-          lon = parseFloat(gpsArray[1]).toFixed(6);
-        }
-      }
 
-      if (!lat || !lon || isNaN(lat) || isNaN(lon)) {
-        setMessage("⚠️ No valid GPS data found.");
+
+
+
+
+      // Extract latitude & longitude
+      let lat = metadata?.latitude || convertDMSToDecimal(metadata?.GPSLatitude, metadata?.GPSLatitudeRef);
+      let lon = metadata?.longitude || convertDMSToDecimal(metadata?.GPSLongitude, metadata?.GPSLongitudeRef);
+
+      if (!lat || !lon) {
+        setMessage({ text: "⚠️ This image has no location data! You can't upload it.", type: "error" });
         setLatitude(null);
         setLongitude(null);
         return;
       }
 
+      // Clear error message & set location data
+      setMessage({ text: "" });
+
+
       setLatitude(lat);
       setLongitude(lon);
-      setMessage("✅ Location data extracted!");
+
     } catch (error) {
-      console.error("EXIF read error:", error);
-      setMessage("❌ Error extracting location data.");
+      console.error("EXIF Parsing Error:", error);
+      setMessage({ text: "⚠️ Error reading image metadata. Try a different image.", type: "error" });
+      setLatitude(null);
+      setLongitude(null);
     }
   };
 
+  // Upload to Supabase Storage & save metadata to "images" table
+  const handleUpload = async () => {
+    if (!image || !latitude || !longitude) return;
+    setUploading(true);
+
+    const fileExt = image.name.split(".").pop();
+    const fileName = `${Date.now()}.${fileExt}`;
+
+    // Upload to Supabase Storage (Bucket: sky-images)
+    const { data, error } = await supabase.storage
+      .from("sky-images")
+      .upload(fileName, image);
+
+    if (error) {
+      setMessage({ text: "❌ Upload failed. Please try again.", type: "error" });
+      setUploading(false);
+      return;
+    }
+
+    const imageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/sky-images/${fileName}`;
+
+    // Insert into "images" table
+    const { error: insertError } = await supabase
+      .from("images")
+      .insert([{ 
+        image_url: imageUrl, 
+        latitude, 
+        longitude, 
+        uploaded_at: new Date() 
+      }]);
+
+    if (insertError) {
+      setMessage({ text: "❌ Database save failed. Please try again.", type: "error" });
+      setUploading(false);
+      return;
+    }
+
+    // Show success message
+    setMessage({ text: "✅ Image uploaded successfully!", type: "success" });
+
+    // Close dialog after 1 second
+    setTimeout(() => {
+      setIsDialogOpen(false);
+      setImage(null);
+      setPreview(null);
+      setLatitude(null);
+      setLongitude(null);
+      setMessage({ text: "" });
+      setUploading(false);
+    }, 1000);
+  };
+
   return (
-    <div className="flex flex-col items-center justify-center h-screen">
-      <Button onClick={() => setIsOpen(true)}>Upload Image</Button>
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <DialogContent className="z-[100] bg-white max-w-md w-full mx-auto sm:max-w-lg md:max-w-xl lg:max-w-2xl p-4 sm:p-6 rounded-lg">  
+        <DialogHeader>
+          <DialogTitle className="text-lg sm:text-xl">Upload Sky Image</DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-gray-500">Only images with location metadata accepted.</p>
+        <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-400 rounded-lg cursor-pointer hover:border-gray-500 transition p-4 text-center">
+          <p className="text-sm text-gray-600">
+            {preview ? "Click to change image" : "Click to upload or drag an image"}
+          </p>
+          <input type="file" accept="image/*" capture="filesystem"  onChange={handleFileChange} className="hidden" />
+        </label>
 
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="z-[100] bg-white max-w-md w-full p-6 rounded-lg">
-          <DialogHeader>
-            <DialogTitle>Extract Location from Image</DialogTitle>
-          </DialogHeader>
+        {/* Display Message (Error or Success) */}
+        {message.text && (
+          <p className={`text-sm font-medium text-center ${message.type === "error" ? "text-red-500" : "text-green-500"} mt-2`}>
+            {message.text}
+          </p>
+        )}
 
-          <label className="block border-2 border-dashed p-4 text-center cursor-pointer hover:border-gray-500 transition">
-            <p className="text-gray-600">{preview ? "Change image" : "Click to upload an image"}</p>
-            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-          </label>
+        {/* Image Preview */}
+        {preview && (
+          <div className="mt-2 flex flex-col items-center">
+            <img src={preview} alt="Preview" className="w-full h-auto rounded-md max-h-64 object-cover" />
+            <p className="text-md text-gray-600 mt-2 text-center">📍 {latitude}, {longitude}</p>
+            <hr className="my-4 border-gray-300 w-full" />
+          </div>
+        )}
 
-          {/* Message Display */}
-          {message && <p className="text-center text-sm mt-2">{message}</p>}
-
-          {/* Image Preview & Coordinates */}
-          {preview && (
-            <div className="mt-2 text-center">
-              <img src={preview} alt="Preview" className="w-full h-auto rounded-md max-h-64 object-cover" />
-              {latitude && longitude ? (
-                <p className="text-gray-600 mt-2">📍 {latitude}, {longitude}</p>
-              ) : (
-                <p className="text-red-500 mt-2">⚠️ No GPS data detected.</p>
-              )}
-            </div>
-          )}
-
-          <DialogFooter className="flex justify-end mt-4">
-            <Button variant="secondary" onClick={() => setIsOpen(false)}>Close</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+        <DialogFooter className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 w-full">
+          <Button variant="secondary" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
+            Cancel
+          </Button>
+          <Button onClick={handleUpload} disabled={uploading || !latitude || !longitude} className="w-full sm:w-auto">
+            {uploading ? "Uploading..." : "Upload"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
