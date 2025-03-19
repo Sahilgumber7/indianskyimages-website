@@ -6,7 +6,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { supabase } from "@/lib/supabase";
 
-export default function SkyImageMap({ dialogOpen }) {
+export default function MapView({ dialogOpen }) {
   const [images, setImages] = useState([]);
 
   useEffect(() => {

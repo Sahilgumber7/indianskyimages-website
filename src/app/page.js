@@ -1,7 +1,11 @@
 "use client";
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import Header from "./_components/header";
-import SkyImageMap from "./_components/mapView";
+
+// Dynamically import MapView (disable SSR)
+const MapView = dynamic(() => import("./_components/mapView"), { ssr: false });
+
 
 export default function Home() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -13,7 +17,7 @@ export default function Home() {
 
       {/* Fullscreen Map - Blurred when dialog is open */}
       <div className={`relative w-full h-screen  ${isDialogOpen ? "blur-sm" : ""}`}>
-        <SkyImageMap />
+        <MapView />
       </div>
     </div>
   );
