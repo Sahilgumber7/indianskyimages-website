@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import * as exifr from "exifr"; // ✅ Use exifr for better EXIF support
+import * as exifr from "exifr"; // ✅ Ensure you have exifr installed
 
 export default function LocationExtractor() {
   const [isOpen, setIsOpen] = useState(false);
@@ -9,6 +9,14 @@ export default function LocationExtractor() {
   const [longitude, setLongitude] = useState(null);
   const [preview, setPreview] = useState(null);
   const [message, setMessage] = useState("");
+
+  // Convert GPS DMS to Decimal
+  const convertDMSToDecimal = (dms, ref) => {
+    if (!dms || dms.length < 3) return NaN; // Ensure valid data
+    let decimal = dms[0] + dms[1] / 60 + dms[2] / 3600;
+    if (ref === "S" || ref === "W") decimal *= -1; // Handle negative values
+    return decimal.toFixed(6); // ✅ Return 6 decimal places for accuracy
+  };
 
   // Function to extract location metadata from the image
   const handleImageUpload = async (event) => {
@@ -34,8 +42,17 @@ export default function LocationExtractor() {
         return;
       }
 
-      setLatitude(metadata.GPSLatitude);
-      setLongitude(metadata.GPSLongitude);
+      // Convert DMS to Decimal
+      const lat = convertDMSToDecimal(metadata.GPSLatitude, metadata.GPSLatitudeRef);
+      const lon = convertDMSToDecimal(metadata.GPSLongitude, metadata.GPSLongitudeRef);
+
+      if (isNaN(lat) || isNaN(lon)) {
+        setMessage("⚠️ Invalid GPS data found.");
+        return;
+      }
+
+      setLatitude(lat);
+      setLongitude(lon);
       setMessage("✅ Location data extracted!");
     } catch (error) {
       console.error("EXIF read error:", error);
