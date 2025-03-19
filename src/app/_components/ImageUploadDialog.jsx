@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
-import EXIF from "exif-js"; // ✅ Use exif-js instead of piexifjs for better Android support
+import EXIF from "exif-js"; // ✅ Use exif-js for better Android support
 
 export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
   const [image, setImage] = useState(null);
