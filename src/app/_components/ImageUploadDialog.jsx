@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import exifr from "exifr";
 
-export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
+export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen, darkMode }) {
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
   const [latitude, setLatitude] = useState(null);
@@ -34,12 +34,6 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
       const metadata = await exifr.parse(file);
       console.log("Extracted Metadata:", metadata);
 
-
-
-
-
-
-
       // Extract latitude & longitude
       let lat = metadata?.latitude || convertDMSToDecimal(metadata?.GPSLatitude, metadata?.GPSLatitudeRef);
       let lon = metadata?.longitude || convertDMSToDecimal(metadata?.GPSLongitude, metadata?.GPSLongitudeRef);
@@ -53,11 +47,8 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
 
       // Clear error message & set location data
       setMessage({ text: "" });
-
-
       setLatitude(lat);
       setLongitude(lon);
-
     } catch (error) {
       console.error("EXIF Parsing Error:", error);
       setMessage({ text: "⚠️ Error reading image metadata. Try a different image.", type: "error" });
@@ -120,26 +111,36 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-      <DialogContent className="z-[100] bg-white max-w-md w-full mx-auto sm:max-w-lg md:max-w-xl lg:max-w-2xl p-4 sm:p-6 rounded-lg">  
+      <DialogContent className={`z-[100] max-w-md w-full mx-auto sm:max-w-lg md:max-w-xl lg:max-w-2xl p-4 sm:p-6 rounded-lg transition
+        ${darkMode ? "bg-gray-800 text-white border-gray-700" : "bg-white text-black border-gray-300"}`}>
+        
         <DialogHeader>
-          <DialogTitle className="text-lg sm:text-xl">Upload Sky Image</DialogTitle>
+          <DialogTitle className={`text-lg sm:text-xl ${darkMode ? "text-white" : "text-black"}`}>
+            Upload Sky Image
+          </DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-gray-500">Only images with location metadata accepted.</p>
-        <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-400 rounded-lg cursor-pointer hover:border-gray-500 transition p-4 text-center">
-          <p className="text-sm text-gray-600">
+
+        <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+          Only images with location metadata accepted.
+        </p>
+
+        <label className={`flex flex-col items-center justify-center w-full border-2 border-dashed rounded-lg cursor-pointer transition p-4 text-center
+          ${darkMode ? "border-gray-500 hover:border-gray-400" : "border-gray-400 hover:border-gray-500"}`}>
+          <p className={`text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
             {preview ? "Click to change image" : "Click to upload or drag an image"}
           </p>
           <input
-          id="fileInput"
-          type="file"
-          onChange={handleFileChange}
-          className="hidden"
+            id="fileInput"
+            type="file"
+            onChange={handleFileChange}
+            className="hidden"
           />
         </label>
 
         {/* Display Message (Error or Success) */}
         {message.text && (
-          <p className={`text-sm font-medium text-center ${message.type === "error" ? "text-red-500" : "text-green-500"} mt-2`}>
+          <p className={`text-sm font-medium text-center mt-2
+            ${message.type === "error" ? "text-red-500" : "text-green-500"}`}>
             {message.text}
           </p>
         )}
@@ -148,16 +149,25 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
         {preview && (
           <div className="mt-2 flex flex-col items-center">
             <img src={preview} alt="Preview" className="w-full h-auto rounded-md max-h-64 object-cover" />
-            <p className="text-md text-gray-600 mt-2 text-center">📍 {latitude}, {longitude}</p>
-            <hr className="my-4 border-gray-300 w-full" />
+            <p className={`text-md mt-2 text-center ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
+              📍 {latitude}, {longitude}
+            </p>
+            <hr className={`my-4 w-full ${darkMode ? "border-gray-600" : "border-gray-300"}`} />
           </div>
         )}
 
         <DialogFooter className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 w-full">
-          <Button variant="secondary" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
+          <Button 
+            variant="secondary" 
+            onClick={() => setIsDialogOpen(false)} 
+            className={`w-full sm:w-auto ${darkMode ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-200 text-black hover:bg-gray-300"}`}>
             Cancel
           </Button>
-          <Button onClick={handleUpload} disabled={uploading || !latitude || !longitude} className="w-full sm:w-auto">
+
+          <Button 
+            onClick={handleUpload} 
+            disabled={uploading || !latitude || !longitude} 
+            className="w-full sm:w-auto bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200">
             {uploading ? "Uploading..." : "Upload"}
           </Button>
         </DialogFooter>

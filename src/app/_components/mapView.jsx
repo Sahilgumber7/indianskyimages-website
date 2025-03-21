@@ -1,12 +1,11 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { supabase } from "@/lib/supabase";
 
-export default function MapView({ dialogOpen }) {
+export default function MapView({ dialogOpen, darkMode }) {
   const [images, setImages] = useState([]);
 
   useEffect(() => {
@@ -17,13 +16,16 @@ export default function MapView({ dialogOpen }) {
     fetchImages();
   }, []);
 
+  // Tile URLs for light & dark mode
+  const lightMap = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+  const darkMap = "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png";
+
   return (
     <div className="absolute inset-0 z-0">
       <MapContainer center={[20.5937, 78.9629]} zoom={5} className="w-full h-full">
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <TileLayer url={darkMode ? darkMap : lightMap} />
 
         {images.map((img) => {
-          
           const customIcon = new L.DivIcon({
             className: "custom-marker",
             html: `<div class="w-12 h-12 flex items-center justify-center overflow-hidden rounded-full border-2 border-white shadow-md">
@@ -32,15 +34,12 @@ export default function MapView({ dialogOpen }) {
             iconSize: [64, 64], // Ensures proper size for the marker
             iconAnchor: [24, 24], // Keeps it centered
           });
-          
-          
-          
 
           return (
             <Marker key={img.id} position={[img.latitude, img.longitude]} icon={customIcon}>
-              <Popup>
+              <Popup className="dark:bg-gray-800 dark:text-white">
                 <img src={img.image_url} alt="Sky" className="w-full h-80 rounded-md" />
-                <p className="text-sm text-gray-600 mt-2">📍 {img.latitude}, {img.longitude}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">📍 {img.latitude}, {img.longitude}</p>
               </Popup>
             </Marker>
           );
