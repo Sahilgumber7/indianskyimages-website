@@ -6,21 +6,15 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { supabase } from "@/lib/supabase";
 
-export default function MapView({ dialogOpen }) {
+export default function MapView({ dialogOpen, darkMode }) {
   const [images, setImages] = useState([]);
-  const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
-    // Fetch images from Supabase
     async function fetchImages() {
       const { data, error } = await supabase.from("images").select("*");
       if (!error) setImages(data);
     }
     fetchImages();
-
-    // Check dark mode from localStorage
-    const storedTheme = localStorage.getItem("theme");
-    setDarkMode(storedTheme === "dark");
   }, []);
 
   // Tile URLs for light & dark mode
@@ -44,10 +38,24 @@ export default function MapView({ dialogOpen }) {
 
           return (
             <Marker key={img.id} position={[img.latitude, img.longitude]} icon={customIcon}>
-              <Popup className={darkMode ? "dark-popup" : "light-popup"}>
-                <div className={`p-3 rounded-md ${darkMode ? "bg-gray-900 text-white" : "bg-white text-black"}`}>
-                  <img src={img.image_url} alt="Sky" className="w-full h-80 rounded-md" />
-                  <p className="text-sm mt-2">📍 {img.latitude}, {img.longitude}</p>
+              <Popup className="custom-popup">
+                <div
+                  className="p-3 rounded-md max-w-xs sm:max-w-sm w-full"
+                  style={{
+                    backgroundColor: darkMode ? "#1F2937" : "#FFFFFF", // Dark: gray-900, Light: white
+                    color: darkMode ? "#FFFFFF" : "#000000", // Dark: white text, Light: black text
+                    borderRadius: "8px",
+                    boxShadow: "none", // Remove default shadow
+                  }}
+                >
+                  <img
+                    src={img.image_url}
+                    alt="Sky"
+                    className="w-full h-48 sm:h-80 rounded-md object-cover"
+                  />
+                  <p className="text-xs sm:text-sm mt-2 text-center">
+                    📍 {img.latitude}, {img.longitude}
+                  </p>
                 </div>
               </Popup>
             </Marker>
