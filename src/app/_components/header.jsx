@@ -21,33 +21,36 @@ export default function Header({ isDialogOpen, setIsDialogOpen, setDarkMode, dar
   }
 
   return (
-    <div className="absolute top-0 left-0 w-full flex justify-between items-center p-4 bg-white dark:bg-gray-900 shadow-lg z-50 transition">
+    <div className="absolute top-0 left-0 w-full flex justify-between items-center p-3 sm:p-4 bg-white dark:bg-gray-900 shadow-lg z-50 transition">
       <h1 className="font-bold text-lg md:text-3xl text-black dark:text-white">
         indianskyimages.
       </h1>
 
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-3 sm:space-x-4">
         <a href="https://t.co/DenLkvA9pO" target="_blank" rel="noopener noreferrer">
-          <FaInstagram size={24} className="text-black dark:text-white hover:text-gray-600 transition" />
+          <FaInstagram className="text-black dark:text-white hover:text-gray-600 transition text-lg sm:text-xl" />
         </a>
 
         <a href="https://x.com/indianskyimages" target="_blank" rel="noopener noreferrer">
-          <FaXTwitter size={24} className="text-black dark:text-white hover:text-gray-600 transition" />
+          <FaXTwitter className="text-black dark:text-white hover:text-gray-600 transition text-lg sm:text-xl" />
         </a>
 
         {/* Toggle Dark Mode */}
-        <button onClick={toggleDarkMode} className="p-2 rounded-full bg-gray-200 dark:bg-gray-800">
-          {darkMode ? <FaSun size={24} className="text-yellow-500" /> : <FaMoon size={24} className="text-gray-800 dark:text-white" />}
+        <button onClick={toggleDarkMode} className="p-1 sm:p-2 rounded-full bg-gray-200 dark:bg-gray-800">
+          {darkMode ? (
+            <FaSun className="text-yellow-500 text-lg sm:text-xl" />
+          ) : (
+            <FaMoon className="text-gray-800 dark:text-white text-lg sm:text-xl" />
+          )}
         </button>
 
-        <Button onClick={() => setIsDialogOpen(true)}  className="bg-black dark:bg-white  text-white dark:text-black">
-          Upload Image
+        <Button onClick={() => setIsDialogOpen(true)} className="bg-black dark:bg-white text-white dark:text-black">
+          Upload
         </Button>
       </div>
 
       {/* Image Upload Dialog */}
       <ImageUploadDialog isDialogOpen={isDialogOpen} setIsDialogOpen={setIsDialogOpen} darkMode={darkMode} />
-
     </div>
   );
 }
