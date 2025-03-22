@@ -30,7 +30,7 @@ export default function MapView({ dialogOpen, darkMode }) {
           const customIcon = new L.DivIcon({
             className: "custom-marker",
             html: `<div class="w-12 h-12 flex items-center justify-center overflow-hidden rounded-full border-2 border-white shadow-md">
-                     <img src="${img.image_url}" class="w-full h-full object-cover scale-150" />
+                     <img src="${img.image_url}" class="w-full h-full object-cover scale-250" />
                    </div>`,
             iconSize: [64, 64],
             iconAnchor: [24, 24],
@@ -40,7 +40,7 @@ export default function MapView({ dialogOpen, darkMode }) {
             <Marker key={img.id} position={[img.latitude, img.longitude]} icon={customIcon}>
               <Popup className="custom-popup">
                 <div
-                  className="p-3 rounded-md max-w-xs sm:max-w-sm w-full"
+                  className="p-3 rounded-md max-w-sm w-full"
                   style={{
                     backgroundColor: darkMode ? "#1F2937" : "#FFFFFF", // Dark: gray-900, Light: white
                     color: darkMode ? "#FFFFFF" : "#000000", // Dark: white text, Light: black text
@@ -51,7 +51,7 @@ export default function MapView({ dialogOpen, darkMode }) {
                   <img
                     src={img.image_url}
                     alt="Sky"
-                    className="w-full h-48 sm:h-80 rounded-md object-cover"
+                    className="w-full h-72 rounded-md object-cover"
                   />
                   <p className="text-xs sm:text-sm mt-2 text-center">
                     📍 {img.latitude}, {img.longitude}
