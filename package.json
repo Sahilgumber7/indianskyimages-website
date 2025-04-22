@@ -16,6 +16,7 @@
     "clsx": "^2.1.1",
     "exif-js": "^2.3.0",
     "exifr": "^7.1.3",
+    "globe.gl": "^2.41.4",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.483.0",
     "next": "15.2.3",
@@ -26,6 +27,7 @@
     "react-leaflet": "^5.0.0",
     "tailwind": "^4.0.0",
     "tailwind-merge": "^3.0.2",
+    "three": "^0.175.0",
     "tw-animate-css": "^1.2.4"
   },
   "devDependencies": {

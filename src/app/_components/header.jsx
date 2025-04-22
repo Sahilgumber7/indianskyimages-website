@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import ImageUploadDialog from "./ImageUploadDialog";
 import { useState, useEffect } from "react";
 
-export default function Header({ isDialogOpen, setIsDialogOpen, setDarkMode, darkMode }) {
+export default function Header({ isDialogOpen, setIsDialogOpen, setDarkMode, darkMode, isGlobeView, setIsGlobeView }) {
   // Load theme from localStorage on mount
   useEffect(() => {
     const storedTheme = localStorage.getItem("theme");
@@ -13,7 +13,7 @@ export default function Header({ isDialogOpen, setIsDialogOpen, setDarkMode, dar
     }
   }, []);
 
-  // Toggle Dark Mode and Save to LocalStorage
+
   function toggleDarkMode() {
     const newMode = !darkMode;
     setDarkMode(newMode);
@@ -34,6 +34,14 @@ export default function Header({ isDialogOpen, setIsDialogOpen, setDarkMode, dar
         <a href="https://x.com/indianskyimages" target="_blank" rel="noopener noreferrer">
           <FaXTwitter className="text-black dark:text-white hover:text-gray-600 transition text-lg sm:text-xl" />
         </a>
+
+        <Button
+        onClick={() => setIsGlobeView((prev) => !prev)}
+        variant="outline"
+        className="ml-2"
+        >
+        {isGlobeView ? "🗺 2D Map" : "🌍 3D Globe"}
+        </Button>
 
         {/* Toggle Dark Mode */}
         <button onClick={toggleDarkMode} className="p-1 sm:p-2 rounded-full bg-gray-200 dark:bg-gray-800">
