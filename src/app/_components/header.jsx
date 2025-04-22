@@ -1,8 +1,11 @@
 "use client";
 import { FaInstagram, FaXTwitter, FaMoon, FaSun } from "react-icons/fa6";
+import { IoEarthOutline } from "react-icons/io5";
+import { CiMap } from "react-icons/ci";
 import { Button } from "@/components/ui/button";
 import ImageUploadDialog from "./ImageUploadDialog";
 import { useState, useEffect } from "react";
+import { LuUpload } from "react-icons/lu";
 
 export default function Header({ isDialogOpen, setIsDialogOpen, setDarkMode, darkMode, isGlobeView, setIsGlobeView }) {
   // Load theme from localStorage on mount
@@ -26,7 +29,7 @@ export default function Header({ isDialogOpen, setIsDialogOpen, setDarkMode, dar
         indianskyimages.
       </h1>
 
-      <div className="flex items-center space-x-3 sm:space-x-4">
+      <div className="flex items-center space-x-2 sm:space-x-4">
         <a href="https://t.co/DenLkvA9pO" target="_blank" rel="noopener noreferrer">
           <FaInstagram className="text-black dark:text-white hover:text-gray-600 transition text-lg sm:text-xl" />
         </a>
@@ -35,13 +38,20 @@ export default function Header({ isDialogOpen, setIsDialogOpen, setDarkMode, dar
           <FaXTwitter className="text-black dark:text-white hover:text-gray-600 transition text-lg sm:text-xl" />
         </a>
 
-        <Button
+        <button
         onClick={() => setIsGlobeView((prev) => !prev)}
-        variant="outline"
-        className="ml-2"
+        className="p-1 sm:p-2 rounded-full bg-gray-200 dark:bg-gray-800"
         >
-        {isGlobeView ? "🗺 2D Map" : "🌍 3D Globe"}
-        </Button>
+          {isGlobeView ? (
+            <>
+            <CiMap className="text-lg" />
+            </>
+          ) : (
+            <>
+            <IoEarthOutline className="text-lg" />
+            </>
+          )}
+        </button>
 
         {/* Toggle Dark Mode */}
         <button onClick={toggleDarkMode} className="p-1 sm:p-2 rounded-full bg-gray-200 dark:bg-gray-800">
@@ -52,8 +62,12 @@ export default function Header({ isDialogOpen, setIsDialogOpen, setDarkMode, dar
           )}
         </button>
 
-        <Button onClick={() => setIsDialogOpen(true)} className="bg-black dark:bg-white text-white dark:text-black">
-          Upload
+        <Button
+        onClick={() => setIsDialogOpen(true)}
+        className="bg-black dark:bg-white text-white dark:text-black flex items-center gap-2"
+        >
+          <LuUpload className="text-lg" />
+        <span className="hidden sm:inline">Upload</span>
         </Button>
       </div>
 

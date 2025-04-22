@@ -12,44 +12,71 @@ export default function GlobeView() {
     async function fetchImages() {
       const { data, error } = await supabase.from("images").select("*");
       if (error || !data) return;
-
       setImages(data);
     }
     fetchImages();
   }, []);
 
   useEffect(() => {
-    if (images.length > 0) {
+    if (images.length > 0 && globeRef.current) {
       const globe = Globe()(globeRef.current)
-        .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+        .globeImageUrl("https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg")
         .backgroundImageUrl("//unpkg.com/three-globe/example/img/night-sky.png")
         .pointLat((d) => d.latitude)
         .pointLng((d) => d.longitude)
-        .pointAltitude(() => 0.01)  // To lift the markers slightly off the surface
-        .pointColor(() => "#ffffff") // Color for the marker
-        .pointRadius(() => 0.1) // Marker size, adjust as needed
-        .pointsData(images)
-        .pointLabel(() => "") // Remove default label
+        .pointColor(() => "#00bfff")
+        .pointAltitude(() => 0.01)
+        .pointLabel((d) => {
+          return `
+            <div style="text-align: center; max-width: 90vw;">
+              <div style="
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                overflow: hidden;
+                border: 2px solid white;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+                margin: auto;
+              ">
+                <img src="${d.image_url}" style="width: 100%; height: 100%; object-fit: cover;" />
+              </div>
+              <br/>
+              <span style="font-size: 0.8rem;">📍 ${d.latitude.toFixed(4)}, ${d.longitude.toFixed(4)}</span>
+            </div>
+          `;
+        })
+        .pointsData(images);
 
-      // Add circular image markers
-      globe.pointsData(images).pointLabel(() => "");
-      
-      // Apply custom image markers using the pointLabel function
-      globe.pointLabel(
-        (d) => `
-          <div style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden; border: 2px solid white; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);">
-            <img src="${d.image_url}" style="width: 100%; height: 100%; object-fit: cover;" />
-          </div>
-          <span>📍 ${d.latitude.toFixed(4)}, ${d.longitude.toFixed(4)}</span>
-        `
-      );
-
-      // Globe settings
+      // Controls
       globe.controls().autoRotate = false;
       globe.controls().autoRotateSpeed = 0.0;
+      globe.controls().enableZoom = true;
+      globe.controls().enablePan = true;
+
+      // Initial camera view
       globe.pointOfView({ lat: 20.59, lng: 78.96, altitude: 2.8 });
+
+      // Handle window resizing
+      const handleResize = () => {
+        globe.width(window.innerWidth);
+        globe.height(window.innerHeight);
+      };
+
+      window.addEventListener("resize", handleResize);
+      handleResize();
+
+      return () => {
+        window.removeEventListener("resize", handleResize);
+      };
     }
   }, [images]);
 
-  return <div ref={globeRef} className="absolute inset-0 z-0" />;
+  return (
+    <div
+      ref={globeRef}
+      className="fixed inset-0 z-0 w-full h-full overflow-hidden"
+      style={{ touchAction: "none" }}
+    />
+  );
 }
+
