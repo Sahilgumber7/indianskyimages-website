@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import exifr from "exifr"; // ✅ Frontend EXIF extraction
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog";
 import { Button } from "./ui/button";
 
@@ -9,14 +10,34 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen, darkM
   const [preview, setPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
+  const [gpsData, setGpsData] = useState(null);
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    setImage(file);
     setPreview(URL.createObjectURL(file));
     setMessage({ text: "" });
+
+    try {
+      // ✅ Read GPS data from EXIF
+      const gps = await exifr.gps(file);
+      if (!gps || !gps.latitude || !gps.longitude) {
+        setMessage({ text: "❌ This image has no location metadata.", type: "error" });
+        setImage(null);
+        setGpsData(null);
+        return;
+      }
+
+      setImage(file);
+      setGpsData({ latitude: gps.latitude, longitude: gps.longitude });
+      setMessage({ text: `📍 Location found: ${gps.latitude.toFixed(5)}, ${gps.longitude.toFixed(5)}`, type: "success" });
+    } catch (err) {
+      console.error("EXIF read error:", err);
+      setMessage({ text: "❌ Could not read image metadata.", type: "error" });
+      setImage(null);
+      setGpsData(null);
+    }
   };
 
   const handleUpload = async () => {
@@ -39,11 +60,11 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen, darkM
       } else {
         setMessage({ text: "✅ Image uploaded successfully!", type: "success" });
 
-        // Close after short delay
         setTimeout(() => {
           setIsDialogOpen(false);
           setImage(null);
           setPreview(null);
+          setGpsData(null);
           setMessage({ text: "" });
         }, 1000);
       }
@@ -66,12 +87,14 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen, darkM
           Only images with location metadata will be accepted.
         </p>
 
-        <label className={`flex flex-col items-center justify-center w-full border-2 border-dashed rounded-lg cursor-pointer p-4 text-center
-          ${darkMode ? "border-gray-500 hover:border-gray-400" : "border-gray-400 hover:border-gray-500"}`}>
+        <label
+          className={`flex flex-col items-center justify-center w-full border-2 border-dashed rounded-lg cursor-pointer p-4 text-center
+          ${darkMode ? "border-gray-500 hover:border-gray-400" : "border-gray-400 hover:border-gray-500"}`}
+        >
           <p className={`text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
             {preview ? "Click to change image" : "Click to upload or drag an image"}
           </p>
-          <input type="file" onChange={handleFileChange} className="hidden" />
+          <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
         </label>
 
         {message.text && (
