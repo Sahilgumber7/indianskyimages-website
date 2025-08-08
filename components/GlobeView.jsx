@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import Globe from "globe.gl";
-import { supabase } from "@/lib/supabase";
 
 export default function GlobeView() {
   const globeRef = useRef();
@@ -10,9 +9,14 @@ export default function GlobeView() {
 
   useEffect(() => {
     async function fetchImages() {
-      const { data, error } = await supabase.from("images").select("*");
-      if (error || !data) return;
-      setImages(data);
+      try {
+        const res = await fetch("/api/images");
+        const json = await res.json();
+        if (res.ok) setImages(json.data);
+        else console.error("Failed to fetch:", json.error);
+      } catch (err) {
+        console.error("Fetch error:", err);
+      }
     }
     fetchImages();
   }, []);
@@ -38,7 +42,7 @@ export default function GlobeView() {
                 box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
                 margin: auto;
               ">
-                <img src="${d.image_url}" style="width: 100%; height: 100%; object-fit: cover;" />
+                <img src="${d.url}" style="width: 100%; height: 100%; object-fit: cover;" />
               </div>
               <br/>
               <span style="font-size: 0.8rem;">📍 ${d.latitude.toFixed(4)}, ${d.longitude.toFixed(4)}</span>
@@ -79,4 +83,3 @@ export default function GlobeView() {
     />
   );
 }
-
