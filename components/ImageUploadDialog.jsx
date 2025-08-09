@@ -11,7 +11,7 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen, darkM
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
   const [gpsData, setGpsData] = useState(null);
-  const [uploadedBy, setUploadedBy] = useState(""); // ✅ new state
+  const [uploadedBy, setUploadedBy] = useState("");
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
@@ -22,7 +22,7 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen, darkM
 
     try {
       const gps = await exifr.gps(file);
-      if (!gps || !gps.latitude || !gps.longitude) {
+      if (!gps?.latitude || !gps?.longitude) {
         setMessage({ text: "❌ This image has no location metadata.", type: "error" });
         setImage(null);
         setGpsData(null);
@@ -31,7 +31,10 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen, darkM
 
       setImage(file);
       setGpsData({ latitude: gps.latitude, longitude: gps.longitude });
-      setMessage({ text: `📍 Location found: ${gps.latitude.toFixed(5)}, ${gps.longitude.toFixed(5)}`, type: "success" });
+      setMessage({
+        text: `📍 Location found: ${gps.latitude.toFixed(5)}, ${gps.longitude.toFixed(5)}`,
+        type: "success",
+      });
     } catch (err) {
       console.error("EXIF read error:", err);
       setMessage({ text: "❌ Could not read image metadata.", type: "error" });
@@ -41,12 +44,14 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen, darkM
   };
 
   const handleUpload = async () => {
-    if (!image) return;
+    if (!image || !gpsData) return;
     setUploading(true);
 
     const formData = new FormData();
     formData.append("image", image);
-    formData.append("uploaded_by", uploadedBy || "Anonymous"); // ✅ send uploader name
+    formData.append("uploaded_by", uploadedBy || "Anonymous");
+    formData.append("latitude", gpsData.latitude);
+    formData.append("longitude", gpsData.longitude);
 
     try {
       const res = await fetch("/api/upload", {
@@ -66,7 +71,7 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen, darkM
           setImage(null);
           setPreview(null);
           setGpsData(null);
-          setUploadedBy(""); // reset input
+          setUploadedBy("");
           setMessage({ text: "" });
         }, 1000);
       }
@@ -80,16 +85,21 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen, darkM
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-      <DialogContent className={`z-[100] max-w-md w-full mx-auto p-4 rounded-lg ${darkMode ? "bg-gray-800 text-white" : "bg-white text-black"}`}>
+      <DialogContent
+        className={`z-[100] max-w-md w-full mx-auto p-4 rounded-lg ${
+          darkMode ? "bg-gray-800 text-white" : "bg-white text-black"
+        }`}
+      >
         <DialogHeader>
-          <DialogTitle className={`text-lg sm:text-xl ${darkMode ? "text-white" : "text-black"}`}>Upload Sky Image</DialogTitle>
+          <DialogTitle className={`text-lg sm:text-xl ${darkMode ? "text-white" : "text-black"}`}>
+            Upload Sky Image
+          </DialogTitle>
         </DialogHeader>
 
         <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
           Only images with location metadata will be accepted.
         </p>
 
-        {/* ✅ New Input for Uploaded By */}
         <input
           type="text"
           value={uploadedBy}
@@ -109,18 +119,31 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen, darkM
           <p className={`text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
             {preview ? "Click to change image" : "Click to upload or drag an image"}
           </p>
-          <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="hidden"
+          />
         </label>
 
         {message.text && (
-          <p className={`text-sm font-medium text-center mt-2 ${message.type === "error" ? "text-red-500" : "text-green-500"}`}>
+          <p
+            className={`text-sm font-medium text-center mt-2 ${
+              message.type === "error" ? "text-red-500" : "text-green-500"
+            }`}
+          >
             {message.text}
           </p>
         )}
 
         {preview && (
           <div className="mt-2 flex flex-col items-center">
-            <img src={preview} alt="Preview" className="w-full h-auto rounded-md max-h-64 object-cover" />
+            <img
+              src={preview}
+              alt="Preview"
+              className="w-full h-auto rounded-md max-h-64 object-cover"
+            />
           </div>
         )}
 
@@ -128,14 +151,18 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen, darkM
           <Button
             variant="secondary"
             onClick={() => setIsDialogOpen(false)}
-            className={`w-full sm:w-auto ${darkMode ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-200 text-black hover:bg-gray-300"}`}
+            className={`w-full sm:w-auto ${
+              darkMode
+                ? "bg-gray-700 text-white hover:bg-gray-600"
+                : "bg-gray-200 text-black hover:bg-gray-300"
+            }`}
           >
             Cancel
           </Button>
 
           <Button
             onClick={handleUpload}
-            disabled={uploading || !image}
+            disabled={uploading || !image || !gpsData}
             className="w-full sm:w-auto bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200"
           >
             {uploading ? "Uploading..." : "Upload"}
