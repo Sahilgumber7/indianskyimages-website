@@ -11,6 +11,7 @@ export async function POST(req) {
     // Parse form data
     const formData = await req.formData();
     const file = formData.get("image");
+    const uploadedBy = formData.get("uploaded_by") || "Anonymous"; // ✅ Get uploader
 
     // Validate file
     if (!file || typeof file === "string") {
@@ -26,7 +27,10 @@ export async function POST(req) {
     // Extract GPS from EXIF
     const exifData = await exifr.gps(buffer);
     if (!exifData?.latitude || !exifData?.longitude) {
-      return NextResponse.json({ error: "Image does not contain location metadata" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Image does not contain location metadata" },
+        { status: 400 }
+      );
     }
 
     // Upload to Cloudinary
@@ -53,6 +57,7 @@ export async function POST(req) {
       public_id: uploadResult.public_id,
       latitude: exifData.latitude,
       longitude: exifData.longitude,
+      uploaded_by: uploadedBy, // ✅ Store uploader
       uploaded_at: new Date(),
     });
 
@@ -62,6 +67,7 @@ export async function POST(req) {
       url: uploadResult.secure_url,
       latitude: exifData.latitude,
       longitude: exifData.longitude,
+      uploaded_by: uploadedBy, // ✅ Return it too
     });
   } catch (error) {
     console.error("❌ Upload route error:", error);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import exifr from "exifr"; // ✅ Frontend EXIF extraction
+import exifr from "exifr";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog";
 import { Button } from "./ui/button";
 
@@ -11,6 +11,7 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen, darkM
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
   const [gpsData, setGpsData] = useState(null);
+  const [uploadedBy, setUploadedBy] = useState(""); // ✅ new state
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
@@ -20,7 +21,6 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen, darkM
     setMessage({ text: "" });
 
     try {
-      // ✅ Read GPS data from EXIF
       const gps = await exifr.gps(file);
       if (!gps || !gps.latitude || !gps.longitude) {
         setMessage({ text: "❌ This image has no location metadata.", type: "error" });
@@ -46,6 +46,7 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen, darkM
 
     const formData = new FormData();
     formData.append("image", image);
+    formData.append("uploaded_by", uploadedBy || "Anonymous"); // ✅ send uploader name
 
     try {
       const res = await fetch("/api/upload", {
@@ -65,6 +66,7 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen, darkM
           setImage(null);
           setPreview(null);
           setGpsData(null);
+          setUploadedBy(""); // reset input
           setMessage({ text: "" });
         }, 1000);
       }
@@ -87,8 +89,21 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen, darkM
           Only images with location metadata will be accepted.
         </p>
 
+        {/* ✅ New Input for Uploaded By */}
+        <input
+          type="text"
+          value={uploadedBy}
+          onChange={(e) => setUploadedBy(e.target.value)}
+          placeholder="Your name (optional)"
+          className={`mt-3 w-full p-2 rounded border ${
+            darkMode
+              ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+              : "bg-white border-gray-300 text-black placeholder-gray-500"
+          }`}
+        />
+
         <label
-          className={`flex flex-col items-center justify-center w-full border-2 border-dashed rounded-lg cursor-pointer p-4 text-center
+          className={`mt-3 flex flex-col items-center justify-center w-full border-2 border-dashed rounded-lg cursor-pointer p-4 text-center
           ${darkMode ? "border-gray-500 hover:border-gray-400" : "border-gray-400 hover:border-gray-500"}`}
         >
           <p className={`text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}>

@@ -5,6 +5,10 @@ const ImageSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  uploaded_by:{
+    type: String,
+    default: "Anonymous",
+  },
   uploaded_at: {
     type: Date,
     default: Date.now,
