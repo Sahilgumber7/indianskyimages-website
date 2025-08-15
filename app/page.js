@@ -39,6 +39,10 @@ export default function Home() {
         ) : (
           <MapView darkMode={darkMode} />
         )}
+
+
+
+        
       </div>
     </div>
   );
