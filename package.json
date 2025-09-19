@@ -25,6 +25,7 @@
     "formidable": "^3.5.4",
     "get-nonce": "^1.0.1",
     "globe.gl": "^2.41.4",
+    "heic2any": "^0.0.4",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.483.0",
     "maplibre-gl": "^5.6.2",
