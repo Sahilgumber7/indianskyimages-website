@@ -1,6 +1,5 @@
 import { useState } from "react";
 import exifr from "exifr";
-import heic2any from "heic2any";
 
 export function useImagePreview() {
   const [preview, setPreview] = useState(null);
@@ -22,7 +21,7 @@ export function useImagePreview() {
         file.name.toLowerCase().endsWith(".heif") ||
         file.name.toLowerCase().endsWith(".heic")
       ) {
-        // Extract EXIF BEFORE conversion (from original HEIC file)
+        // Extract EXIF BEFORE conversion
         const gpsData = await exifr.gps(file);
 
         if (!gpsData?.latitude || !gpsData?.longitude) {
@@ -31,14 +30,20 @@ export function useImagePreview() {
           return;
         }
 
-        // Convert for preview only
-        const converted = await heic2any({
-          blob: file,
-          toType: "image/jpeg",
-          quality: 0.8,
-        });
+        // Lazy-load heic2any only in browser
+        if (typeof window !== "undefined") {
+          const heic2any = (await import("heic2any")).default;
+          const converted = await heic2any({
+            blob: file,
+            toType: "image/jpeg",
+            quality: 0.8,
+          });
+          previewUrl = URL.createObjectURL(converted);
+        } else {
+          // SSR fallback
+          previewUrl = null;
+        }
 
-        previewUrl = URL.createObjectURL(converted);
         fileForExif = file; // keep original file for storage if needed
         setGps({ latitude: gpsData.latitude, longitude: gpsData.longitude });
       } else {

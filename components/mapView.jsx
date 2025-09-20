@@ -15,9 +15,8 @@ export default function MapView() {
         zoom={5}
         className="w-full h-full"
         minZoom={3}
-        zoomControl={false} // Disable default top-left zoom control
-      >
-        {/* Zoom control at bottom-right */}
+        zoomControl={false} 
+      >n
         <ZoomControl position="bottomright" />
 
         <TileLayer
