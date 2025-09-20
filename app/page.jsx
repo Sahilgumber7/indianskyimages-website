@@ -1,11 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
-import dynamic from "next/dynamic";
 import Header from "../components/header";
+import MapView from "../components/MapView";
+import GlobeView from "../components/GlobeView";
 
-// Dynamically import map components
-const MapView = dynamic(() => import("../components/MapView"), { ssr: false });
-const GlobeView = dynamic(() => import("../components/GlobeView"), { ssr: false });
 
 export default function Home() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
