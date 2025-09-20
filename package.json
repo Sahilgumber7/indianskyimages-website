@@ -37,6 +37,7 @@
     "react-icons": "^5.5.0",
     "react-leaflet": "^5.0.0",
     "react-map-gl": "^8.0.4",
+    "sonner": "^2.0.7",
     "streamifier": "^0.1.1",
     "supercluster": "^8.0.1",
     "tailwind": "^4.0.0",

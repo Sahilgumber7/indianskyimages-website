@@ -1,5 +1,13 @@
+"use client";
+
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Loader2 } from "lucide-react";
 
@@ -9,33 +17,53 @@ import MessageBox from "./MessageBox";
 import { useImagePreview } from "../hooks/useImagePreview";
 import { useReverseGeocode } from "../hooks/useReverseGeocde";
 import { useUploadImage } from "../hooks/useImageUpload";
-
+import { toast } from "sonner"; 
 
 export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen, darkMode }) {
-  const { image, preview, gps, error, readFile, setError } = useImagePreview();
+  const { image, preview, gps, error, readFile, setError, reset: resetPreview } =
+    useImagePreview();
   const locationName = useReverseGeocode(gps);
 
   const [uploadedBy, setUploadedBy] = useState("");
 
+  // Reset everything when dialog closes
   const resetForm = () => {
     setUploadedBy("");
     setError(null);
+    resetPreview(); // ✅ clears image + preview
   };
 
-  const { uploadImage, uploading, error: uploadError, setError: setUploadError } = useUploadImage({
-    resetForm,
-    closeDialog: () => setIsDialogOpen(false),
-  });
+  const { uploadImage, uploading, error: uploadError, setError: setUploadError } =
+    useUploadImage({
+      resetForm,
+      closeDialog: () => setIsDialogOpen(false),
+      onSuccess: () => {
+        toast.success(" Image uploaded successfully!");
+        resetForm();
+        setIsDialogOpen(false);
+      },
+      onError: (errMsg) => {
+        toast.error(errMsg || " Upload failed. Please try again.");
+      },
+    });
 
   return (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+    <Dialog
+      open={isDialogOpen}
+      onOpenChange={(open) => {
+        setIsDialogOpen(open);
+        if (!open) resetForm(); // ✅ reset when closed
+      }}
+    >
       <DialogContent
         className={`max-w-md w-full rounded-2xl shadow-xl p-6 ${
           darkMode ? "bg-gray-900 text-gray-100" : "bg-white text-gray-900"
         }`}
       >
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">Upload Sky Image</DialogTitle>
+          <DialogTitle className="text-xl font-semibold">
+            Upload Sky Image
+          </DialogTitle>
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Only images with location metadata will be accepted.
           </p>
@@ -55,7 +83,11 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen, darkM
         />
 
         {/* File Upload Zone */}
-        <FileDropzone onFileSelect={readFile} preview={preview} darkMode={darkMode} />
+        <FileDropzone
+          onFileSelect={readFile}
+          preview={preview}
+          darkMode={darkMode}
+        />
 
         {/* Errors */}
         <MessageBox error={error || uploadError} />

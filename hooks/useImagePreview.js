@@ -13,39 +13,62 @@ export function useImagePreview() {
 
     try {
       let previewUrl;
+      let fileForExif = file; // default → original file
 
+      // Handle HEIC/HEIF conversion
       if (
         file.type === "image/heif" ||
         file.type === "image/heic" ||
-        file.name.endsWith(".heif") ||
-        file.name.endsWith(".heic")
+        file.name.toLowerCase().endsWith(".heif") ||
+        file.name.toLowerCase().endsWith(".heic")
       ) {
-        const converted = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.8 });
+        // Extract EXIF BEFORE conversion (from original HEIC file)
+        const gpsData = await exifr.gps(file);
+
+        if (!gpsData?.latitude || !gpsData?.longitude) {
+          setError("❌ This image has no location metadata.");
+          reset();
+          return;
+        }
+
+        // Convert for preview only
+        const converted = await heic2any({
+          blob: file,
+          toType: "image/jpeg",
+          quality: 0.8,
+        });
+
         previewUrl = URL.createObjectURL(converted);
+        fileForExif = file; // keep original file for storage if needed
+        setGps({ latitude: gpsData.latitude, longitude: gpsData.longitude });
       } else {
+        // Non-HEIC → extract EXIF directly
+        const gpsData = await exifr.gps(file);
+
+        if (!gpsData?.latitude || !gpsData?.longitude) {
+          setError("❌ This image has no location metadata.");
+          reset();
+          return;
+        }
+
         previewUrl = URL.createObjectURL(file);
+        setGps({ latitude: gpsData.latitude, longitude: gpsData.longitude });
       }
 
-      const gpsData = await exifr.gps(file);
-      if (!gpsData?.latitude || !gpsData?.longitude) {
-        setError("❌ This image has no location metadata.");
-        setPreview(null);
-        setGps(null);
-        setImage(null);
-        return;
-      }
-
-      setImage(file);
+      setImage(fileForExif);
       setPreview(previewUrl);
-      setGps({ latitude: gpsData.latitude, longitude: gpsData.longitude });
     } catch (err) {
       console.error("File handling error:", err);
       setError("❌ Could not read image metadata.");
-      setPreview(null);
-      setImage(null);
-      setGps(null);
+      reset();
     }
   };
 
-  return { image, preview, gps, error, readFile, setError };
+  const reset = () => {
+    setPreview(null);
+    setImage(null);
+    setGps(null);
+  };
+
+  return { image, preview, gps, error, readFile, setError, reset };
 }

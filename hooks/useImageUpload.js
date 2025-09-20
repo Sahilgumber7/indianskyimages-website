@@ -1,11 +1,14 @@
 import { useState } from "react";
 
-export function useUploadImage({ resetForm, closeDialog }) {
+export function useUploadImage({ resetForm, closeDialog, onSuccess, onError }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
 
   const uploadImage = async ({ image, uploadedBy, gps, locationName }) => {
-    if (!image || !gps) return;
+    if (!image || !gps) {
+      onError?.("❌ Missing image or location data.");
+      return;
+    }
 
     setUploading(true);
     setError(null);
@@ -19,22 +22,22 @@ export function useUploadImage({ resetForm, closeDialog }) {
 
     try {
       const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
 
-      if (res.ok) {
-        // ✅ optional delay for smoother UX
-        setTimeout(() => {
-          closeDialog();
-          resetForm();
-        }, 1000);
-      } else {
-        setError("❌ Upload failed. Please try again.");
+      if (!res.ok) {
+        throw new Error(data.error || "Upload failed. Please try again.");
       }
+
+      resetForm();
+      closeDialog();
+      onSuccess?.(); // ✅ Call success callback
     } catch (err) {
       console.error("Upload error:", err);
-      setError("❌ Upload failed. Please try again.");
+      setError(err.message);
+      onError?.(err.message); // ✅ Call error callback
+    } finally {
+      setUploading(false);
     }
-
-    setUploading(false);
   };
 
   return { uploadImage, uploading, error, setError };
