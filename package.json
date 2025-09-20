@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@changey/react-leaflet-markercluster": "^4.0.0-rc1",
     "@radix-ui/react-dialog": "^1.1.6",
     "@radix-ui/react-slot": "^1.2.3",
     "@supabase/supabase-js": "^2.49.1",
