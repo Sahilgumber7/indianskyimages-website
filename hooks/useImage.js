@@ -1,5 +1,5 @@
 // hooks/useImages.js
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 
 export function useImages() {
   const [images, setImages] = useState([]);
@@ -21,5 +21,11 @@ export function useImages() {
     fetchImages();
   }, []);
 
-  return { images, loading };
+  // 🔎 computed arrays
+  const mapImages = useMemo(
+    () => images.filter(img => img.latitude && img.longitude),
+    [images]
+  );
+
+  return { images, mapImages, loading };
 }

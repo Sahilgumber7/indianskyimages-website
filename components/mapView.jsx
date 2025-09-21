@@ -6,7 +6,7 @@ import { useImages } from "../hooks/useImage";
 import ClusterMarkers from "./ClusterMarkers";
 
 export default function MapView({ darkMode }) {
-  const { images, loading } = useImages();
+  const { mapImages, loading } = useImages();
 
   // Dark vs light tile URLs
   const tileUrl = darkMode
@@ -30,7 +30,7 @@ export default function MapView({ darkMode }) {
 
         <TileLayer url={tileUrl} attribution={attribution} />
 
-        {!loading && <ClusterMarkers images={images} />}
+        {!loading && <ClusterMarkers images={ mapImages} />}
       </MapContainer>
     </div>
   );
