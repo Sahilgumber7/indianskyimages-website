@@ -1,12 +1,9 @@
 "use client";
 
 import { useImages } from "../hooks/useImage";
+import { useEffect, useState } from "react";
 
-// Masonry CSS
-const masonryStyles = {
-  columnCount: 4,
-  columnGap: "1.5rem",
-};
+// Default masonry styles
 const columnItem = {
   breakInside: "avoid",
   marginBottom: "1.5rem",
@@ -14,13 +11,27 @@ const columnItem = {
 
 export default function Gallery() {
   const { images, loading, error } = useImages();
+  const [columns, setColumns] = useState(4);
+
+  // Update column count based on screen width
+  useEffect(() => {
+    const updateColumns = () => {
+      if (window.innerWidth < 640) setColumns(2); // mobile
+      else if (window.innerWidth < 1024) setColumns(3); // tablet
+      else setColumns(4); // desktop
+    };
+
+    updateColumns();
+    window.addEventListener("resize", updateColumns);
+    return () => window.removeEventListener("resize", updateColumns);
+  }, []);
 
   if (loading) return <p className="text-center py-4">Loading...</p>;
   if (error) return <p className="text-center py-4 text-red-500">{error}</p>;
 
   return (
     <div
-      style={masonryStyles}
+      style={{ columnCount: columns, columnGap: "1.5rem" }}
       className="px-4 pt-24 bg-gray-50 dark:bg-gray-900 transition-colors"
     >
       {images.map((img, i) => (
