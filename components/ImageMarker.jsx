@@ -4,17 +4,17 @@ import { Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import MarkerPopupContent from "./MarkerPopupContent";
 
-function createIcon(url) {
+function createIcon(url, size = 48) {
   return L.divIcon({
     className: "custom-marker",
     html: `
       <div style="
-        width: 60px;
-        height: 60px;
-        border-radius: 16px;
+        width: ${size}px;
+        height: ${size}px;
+        border-radius: 50%;
         overflow: hidden;
-        border: 2px solid #fff;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+        border: 1px solid #fff;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.25);
         background: #f0f0f0;
         display: flex;
         align-items: center;
@@ -28,11 +28,12 @@ function createIcon(url) {
         " />
       </div>
     `,
-    iconSize: [60, 60],
-    iconAnchor: [30, 30],
-    popupAnchor: [0, -30],
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -size / 2],
   });
 }
+
 
 export default function ImageMarker({ img }) {
   const lat = parseFloat(img.latitude);

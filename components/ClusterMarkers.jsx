@@ -1,18 +1,25 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Supercluster from "supercluster";
-import { useMapEvent } from "react-leaflet";
+import { useMap } from "react-leaflet";
 import ClusterMarker from "./ClusterMarker";
 import ImageMarker from "./ImageMarker";
 
 export default function ClusterMarkers({ images }) {
-  const map = useMapEvent("moveend", () => setMapState({ zoom: map.getZoom(), bounds: map.getBounds() }));
-
+  const map = useMap();
   const [mapState, setMapState] = useState({
     zoom: map.getZoom(),
     bounds: map.getBounds(),
   });
+
+  // Update map bounds & zoom on move/zoom
+  useEffect(() => {
+    const onMove = () =>
+      setMapState({ zoom: map.getZoom(), bounds: map.getBounds() });
+    map.on("moveend", onMove);
+    return () => map.off("moveend", onMove);
+  }, [map]);
 
   // Convert images to GeoJSON points
   const points = useMemo(
@@ -28,14 +35,14 @@ export default function ClusterMarkers({ images }) {
     [images]
   );
 
-  // Supercluster instance
+  // Only create Supercluster once
   const supercluster = useMemo(() => {
     const sc = new Supercluster({ radius: 60, maxZoom: 18 });
     sc.load(points);
     return sc;
   }, [points]);
 
-  // Get clusters for current zoom and bounds
+  // Only get clusters in current bounds
   const clusters = useMemo(() => {
     if (!mapState.bounds) return [];
     const bounds = [
@@ -51,9 +58,18 @@ export default function ClusterMarkers({ images }) {
     <>
       {clusters.map((cluster) =>
         cluster.properties.cluster ? (
-          <ClusterMarker key={`cluster-${cluster.id}`} cluster={cluster} supercluster={supercluster} map={map} />
+          <ClusterMarker
+            key={`cluster-${cluster.id}`}
+            cluster={cluster}
+            supercluster={supercluster}
+            map={map}
+          />
         ) : (
-          <ImageMarker key={cluster.properties.img._id} img={cluster.properties.img} />
+          <ImageMarker
+            key={cluster.properties.img._id}
+            img={cluster.properties.img}
+            small // Pass prop to render thumbnail instead of full image
+          />
         )
       )}
     </>
