@@ -5,7 +5,6 @@ import { connectDB } from "../../../lib/db";
 import Image from "../../../models/Image";
 import cloudinary from "../../../lib/cloudinary";
 
-
 export async function POST(req) {
   try {
     const formData = await req.formData();
@@ -16,9 +15,6 @@ export async function POST(req) {
 
     if (!file || typeof file === "string") {
       return NextResponse.json({ error: "No image uploaded" }, { status: 400 });
-    }
-    if (!latitude || !longitude) {
-      return NextResponse.json({ error: "No GPS data" }, { status: 400 });
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -35,8 +31,8 @@ export async function POST(req) {
     await Image.create({
       image_url: uploadResult.secure_url,
       public_id: uploadResult.public_id,
-      latitude,
-      longitude,
+      latitude: isNaN(latitude) ? null : latitude,
+      longitude: isNaN(longitude) ? null : longitude,
       uploaded_by: uploadedBy,
       uploaded_at: new Date(),
     });
@@ -44,8 +40,8 @@ export async function POST(req) {
     return NextResponse.json({
       message: "✅ Upload successful",
       url: uploadResult.secure_url,
-      latitude,
-      longitude,
+      latitude: isNaN(latitude) ? null : latitude,
+      longitude: isNaN(longitude) ? null : longitude,
       uploaded_by: uploadedBy,
     });
   } catch (error) {

@@ -38,12 +38,12 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen, darkM
       resetForm,
       closeDialog: () => setIsDialogOpen(false),
       onSuccess: () => {
-        toast.success(" Image uploaded successfully!");
+        toast.success("Image uploaded successfully!");
         resetForm();
         setIsDialogOpen(false);
       },
       onError: (errMsg) => {
-        toast.error(errMsg || " Upload failed. Please try again.");
+        toast.error(errMsg || "Upload failed. Please try again.");
       },
     });
 
@@ -65,7 +65,7 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen, darkM
             Upload Sky Image
           </DialogTitle>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Only images with location metadata will be accepted.
+            Only images with location metadata will have their location displayed.
           </p>
         </DialogHeader>
 
@@ -93,7 +93,11 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen, darkM
         <MessageBox error={error || uploadError} />
 
         {/* Preview + Location */}
-        <PreviewCard preview={preview} locationName={locationName} />
+<PreviewCard
+  preview={preview}
+  locationName={locationName}
+  noLocation={!gps} // pass a flag for missing GPS
+/>
 
         {/* Footer Buttons */}
         <DialogFooter className="mt-6 flex flex-col sm:flex-row gap-3">
@@ -109,10 +113,15 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen, darkM
             Cancel
           </Button>
           <Button
-            onClick={() =>
-              uploadImage({ image, uploadedBy, gps, locationName })
-            }
-            disabled={uploading || !image || !gps}
+            onClick={() => {
+              if (!gps) {
+                toast(
+                  "This image does not have location data. It will still be uploaded."
+                );
+              }
+              uploadImage({ image, uploadedBy, gps, locationName });
+            }}
+            disabled={uploading || !image}
             className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white"
           >
             {uploading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}

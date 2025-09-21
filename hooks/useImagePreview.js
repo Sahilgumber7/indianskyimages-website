@@ -12,25 +12,24 @@ export function useImagePreview() {
 
     try {
       let previewUrl;
-      let fileForExif = file; // default → original file
+      let fileForStorage = file;
 
-      // Handle HEIC/HEIF conversion
+      // Extract GPS metadata if available
+      const gpsData = await exifr.gps(file);
+      if (gpsData?.latitude && gpsData?.longitude) {
+        setGps({ latitude: gpsData.latitude, longitude: gpsData.longitude });
+      } else {
+        setGps(null);
+        setError("⚠️ This image has no location metadata.");
+      }
+
+      // Handle HEIC/HEIF conversion if needed
       if (
         file.type === "image/heif" ||
         file.type === "image/heic" ||
         file.name.toLowerCase().endsWith(".heif") ||
         file.name.toLowerCase().endsWith(".heic")
       ) {
-        // Extract EXIF BEFORE conversion
-        const gpsData = await exifr.gps(file);
-
-        if (!gpsData?.latitude || !gpsData?.longitude) {
-          setError("❌ This image has no location metadata.");
-          reset();
-          return;
-        }
-
-        // Lazy-load heic2any only in browser
         if (typeof window !== "undefined") {
           const heic2any = (await import("heic2any")).default;
           const converted = await heic2any({
@@ -40,27 +39,14 @@ export function useImagePreview() {
           });
           previewUrl = URL.createObjectURL(converted);
         } else {
-          // SSR fallback
-          previewUrl = null;
+          previewUrl = null; // SSR fallback
         }
-
-        fileForExif = file; // keep original file for storage if needed
-        setGps({ latitude: gpsData.latitude, longitude: gpsData.longitude });
       } else {
-        // Non-HEIC → extract EXIF directly
-        const gpsData = await exifr.gps(file);
-
-        if (!gpsData?.latitude || !gpsData?.longitude) {
-          setError("❌ This image has no location metadata.");
-          reset();
-          return;
-        }
-
+        // Regular image
         previewUrl = URL.createObjectURL(file);
-        setGps({ latitude: gpsData.latitude, longitude: gpsData.longitude });
       }
 
-      setImage(fileForExif);
+      setImage(fileForStorage);
       setPreview(previewUrl);
     } catch (err) {
       console.error("File handling error:", err);
@@ -73,6 +59,7 @@ export function useImagePreview() {
     setPreview(null);
     setImage(null);
     setGps(null);
+    setError(null);
   };
 
   return { image, preview, gps, error, readFile, setError, reset };

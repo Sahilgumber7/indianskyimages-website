@@ -5,8 +5,10 @@ export function useUploadImage({ resetForm, closeDialog, onSuccess, onError }) {
   const [error, setError] = useState(null);
 
   const uploadImage = async ({ image, uploadedBy, gps, locationName }) => {
-    if (!image || !gps) {
-      onError?.("❌ Missing image or location data.");
+    if (!image) {
+      const msg = "❌ No image selected.";
+      setError(msg);
+      onError?.(msg);
       return;
     }
 
@@ -16,8 +18,8 @@ export function useUploadImage({ resetForm, closeDialog, onSuccess, onError }) {
     const formData = new FormData();
     formData.append("image", image);
     formData.append("uploaded_by", uploadedBy || "Anonymous");
-    formData.append("latitude", gps.latitude);
-    formData.append("longitude", gps.longitude);
+    formData.append("latitude", gps?.latitude || "");
+    formData.append("longitude", gps?.longitude || "");
     formData.append("location_name", locationName || "Unknown");
 
     try {
@@ -30,11 +32,12 @@ export function useUploadImage({ resetForm, closeDialog, onSuccess, onError }) {
 
       resetForm();
       closeDialog();
-      onSuccess?.(); // ✅ Call success callback
+      onSuccess?.();
     } catch (err) {
       console.error("Upload error:", err);
-      setError(err.message);
-      onError?.(err.message); // ✅ Call error callback
+      const msg = err.message || "Upload failed.";
+      setError(msg);
+      onError?.(msg);
     } finally {
       setUploading(false);
     }

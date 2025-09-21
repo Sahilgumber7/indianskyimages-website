@@ -1,6 +1,6 @@
 import { MapPin } from "lucide-react";
 
-export default function PreviewCard({ preview, locationName }) {
+export default function PreviewCard({ preview, locationName, noLocation = false }) {
   if (!preview) return null;
 
   return (
@@ -10,10 +10,18 @@ export default function PreviewCard({ preview, locationName }) {
         alt="Preview"
         className="w-full max-h-64 object-cover rounded-lg shadow"
       />
-      {locationName && (
+
+      {locationName && !noLocation && (
         <p className="flex items-center text-sm text-gray-600 dark:text-gray-400 mt-2">
           <MapPin className="h-4 w-4 mr-1 text-indigo-500" />
           {locationName}
+        </p>
+      )}
+
+      {noLocation && (
+        <p className="text-xs text-yellow-500 mt-1 flex items-center">
+          <MapPin className="h-4 w-4 mr-1" />
+          No location data available
         </p>
       )}
     </div>
