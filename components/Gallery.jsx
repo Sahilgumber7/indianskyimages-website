@@ -37,9 +37,9 @@ export default function Gallery() {
     <div className="min-h-screen bg-white dark:bg-black transition-colors duration-700">
       <div className="max-w-[1700px] mx-auto px-6 sm:px-10 lg:px-16 py-32 sm:py-48">
         <div className="mb-24 space-y-6 max-w-3xl animate-in fade-in slide-in-from-left-8 duration-1000">
-          <h2 className="text-6xl sm:text-8xl font-black tracking-tighter text-black dark:text-white lowercase">
+          <h1 className="text-6xl sm:text-8xl font-black tracking-tighter text-black dark:text-white lowercase">
             indianskyimages <span className="opacity-20 italic">archive.</span>
-          </h2>
+          </h1>
           <p className="text-gray-500 dark:text-gray-400 font-medium text-xl leading-relaxed">
             A collective observation of the heavens above India.
           </p>
@@ -57,7 +57,11 @@ export default function Gallery() {
                 <div className="relative overflow-hidden">
                   <img
                     src={img.image_url}
-                    alt={img.locationName || "Skycap"}
+                    alt={
+                      img.location_name
+                        ? `Sky image from ${img.location_name}`
+                        : "Sky image from India"
+                    }
                     className="w-full h-auto object-cover transition-transform duration-1000 group-hover:scale-105 group-hover:blur-sm"
                     loading={i < 2 ? "eager" : "lazy"}
                     decoding="async"

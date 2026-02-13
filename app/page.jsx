@@ -30,7 +30,11 @@ export default function Home() {
   const isDark = resolvedTheme === "dark";
 
   return (
-    <div className="relative bg-white dark:bg-black min-h-screen transition-colors duration-700">
+    <main className="relative bg-white dark:bg-black min-h-screen transition-colors duration-700">
+      <h1 className="sr-only">Indian Sky Images</h1>
+      <p className="sr-only">
+        Explore a map and 3D globe of sky images captured across India, and upload your own sky photography.
+      </p>
       <Header
         isDialogOpen={isDialogOpen}
         setIsDialogOpen={setIsDialogOpen}
@@ -41,6 +45,6 @@ export default function Home() {
       <div className={`relative w-full h-screen transition-all duration-700 ${isDialogOpen ? "blur-xl" : ""}`}>
         {isGlobeView ? <GlobeView /> : <MapView darkMode={isDark} />}
       </div>
-    </div>
+    </main>
   );
 }

@@ -41,9 +41,9 @@ export default function Header({
       {/* Apple-style Logo */}
       <div className="flex items-center gap-4">
         <Link href="/">
-          <h1 className="font-bold text-xl md:text-2xl text-black dark:text-white tracking-tight hover:opacity-70 transition-opacity cursor-pointer">
+          <span className="font-bold text-xl md:text-2xl text-black dark:text-white tracking-tight hover:opacity-70 transition-opacity cursor-pointer">
             indianskyimages.
-          </h1>
+          </span>
         </Link>
         <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-black/5 dark:bg-white/10 border border-black/5 dark:border-white/5">
           <div className="w-1.5 h-1.5 rounded-full bg-black dark:bg-white animate-pulse" />
