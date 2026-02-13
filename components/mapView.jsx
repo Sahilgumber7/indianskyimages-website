@@ -145,6 +145,32 @@ export default function MapView({ darkMode }) {
   const { mapImages, loading } = useImages();
   const [selectedClusterImages, setSelectedClusterImages] = useState(null);
   const [currentIdx, setCurrentIdx] = useState(0);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
+
+  const onTouchEnd = (e) => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 40;
+    const isRightSwipe = distance < -40;
+    if (isLeftSwipe) {
+      nextImage();
+      e.stopPropagation();
+    }
+    if (isRightSwipe) {
+      prevImage();
+      e.stopPropagation();
+    }
+  };
 
   const nextImage = () => {
     if (selectedClusterImages) {
@@ -208,7 +234,7 @@ export default function MapView({ darkMode }) {
             <div className="w-full p-6 md:p-8 flex items-center justify-between">
               <div className="flex flex-col max-w-[70%]">
                 <DialogTitle className="text-2xl md:text-3xl font-black tracking-tighter text-black dark:text-white lowercase">
-                  indianskyimages.
+                  indianskyimages archive.
                 </DialogTitle>
                 <DialogDescription className="sr-only">
                   View full-resolution images from this location.
@@ -223,16 +249,15 @@ export default function MapView({ darkMode }) {
                   </span>
                 </div>
               </div>
-              <button
-                onClick={() => setSelectedClusterImages(null)}
-                className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-black dark:text-white backdrop-blur-3xl transition-all active:scale-90 border border-black/5 dark:border-white/10"
-              >
-                <LuX className="text-xl md:text-2xl" />
-              </button>
             </div>
 
-            {/* Content Area - Touch Aware */}
-            <div className="flex-1 w-full flex items-center justify-center group overflow-hidden px-4 md:px-10 relative">
+            {/* Content Area - Swipe Support */}
+            <div
+              className="flex-1 w-full flex items-center justify-center group overflow-hidden px-4 md:px-10 relative"
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
+            >
               {/* Desktop-Only Navigation Arrows */}
               <div className="absolute inset-y-0 left-0 w-24 hidden md:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-50">
                 <Button variant="ghost" onClick={prevImage} className="rounded-full w-16 h-16 p-0 text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/10 backdrop-blur-2xl border border-black/5 dark:border-white/5 active:scale-90 transition-all">

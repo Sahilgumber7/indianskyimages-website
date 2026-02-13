@@ -94,34 +94,24 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogContent
-        className="max-w-4xl w-[95vw] sm:w-full rounded-[2.5rem] shadow-[0_32px_64px_rgba(0,0,0,0.2)] dark:shadow-[0_32px_64px_rgba(0,0,0,0.4)] p-0 overflow-hidden bg-white/80 dark:bg-black/80 backdrop-blur-3xl border border-white/20 dark:border-white/10 transition-all duration-700 animate-in zoom-in-95"
+        className="max-w-4xl w-[95vw] sm:w-full max-h-[90dvh] overflow-y-auto rounded-[2.5rem] shadow-[0_32px_64px_rgba(0,0,0,0.5)] p-0 bg-white/95 dark:bg-black/95 backdrop-blur-3xl border border-white/20 dark:border-white/10 transition-all duration-500 animate-in zoom-in-95 focus:outline-none no-scrollbar"
       >
-        {/* Subtle Apple-style top bar */}
-        <div className="h-1.5 w-full bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-800 to-transparent opacity-50" />
 
-        <div className="p-8 sm:p-12 space-y-10">
-          <DialogHeader className="flex flex-row items-center justify-between space-y-0">
-            <div className="space-y-1">
-              <DialogTitle className="text-4xl font-black tracking-tight text-black dark:text-white">
-                Contribute
-              </DialogTitle>
-              <p className="text-sm text-gray-400 dark:text-gray-500 font-medium">
-                Preserve the horizon in our collaborative archive.
-              </p>
-            </div>
-            <button
-              onClick={() => setIsDialogOpen(false)}
-              className="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-            >
-              <LuX className="text-xl text-gray-400" />
-            </button>
+        <div className="p-5 sm:p-12 space-y-6 sm:space-y-10">
+          <DialogHeader className="flex flex-col space-y-1">
+            <DialogTitle className="text-2xl sm:text-4xl font-black tracking-tighter text-black dark:text-white uppercase">
+              Contribute
+            </DialogTitle>
+            <p className="text-[11px] sm:text-sm text-black/40 dark:text-white/40 font-bold uppercase tracking-widest leading-relaxed">
+              Upload your capture to the archive.
+            </p>
           </DialogHeader>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            <div className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+            <div className="space-y-6 sm:space-y-8">
               {/* Monochromatic Input */}
-              <div className="space-y-3 group">
-                <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 ml-1">
+              <div className="space-y-2 sm:space-y-3 group">
+                <label className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 ml-1">
                   Photographer
                 </label>
                 <input
@@ -129,16 +119,16 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
                   value={uploadedBy}
                   onChange={(e) => setUploadedBy(e.target.value)}
                   placeholder="Anonymous"
-                  className="w-full rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-white/5 p-4 text-sm focus:ring-1 focus:ring-black dark:focus:ring-white focus:border-black dark:focus:border-white outline-none transition-all duration-300 placeholder:text-gray-300 dark:text-white"
+                  className="w-full rounded-2xl border border-gray-100 dark:border-gray-800 bg-black/5 dark:bg-white/5 p-4 text-sm focus:ring-1 focus:ring-black dark:focus:ring-white outline-none transition-all duration-300 placeholder:text-gray-300 dark:text-white"
                 />
               </div>
 
               {/* Monochromatic Dropzone */}
-              <div className="space-y-3">
-                <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 ml-1">
+              <div className="space-y-2 sm:space-y-3">
+                <label className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 ml-1">
                   Sky Capture
                 </label>
-                <div className="group transition-transform hover:scale-[1.01] active:scale-[0.99]">
+                <div className="group transition-transform active:scale-[0.98]">
                   <FileDropzone onFileSelect={readFile} preview={preview} />
                 </div>
               </div>
@@ -179,15 +169,15 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
               <Button
                 onClick={() => {
                   if (!gps && preview) {
-                    toast.info("No GPS found. Mapping to global center.");
+                    toast.info("No GPS found. Mapping to center.");
                   }
                   uploadImage({ image, uploadedBy, gps, locationName });
                 }}
                 disabled={uploading || !image}
-                className="rounded-full px-10 py-6 bg-black dark:bg-white text-white dark:text-black font-black text-sm shadow-2xl hover:scale-105 active:scale-95 transition-all disabled:opacity-30 min-w-[180px]"
+                className="w-full sm:w-auto rounded-full px-10 py-5 sm:py-7 bg-black dark:bg-white text-white dark:text-black font-black text-[12px] uppercase tracking-widest shadow-2xl active:scale-95 transition-all disabled:opacity-30 min-w-[180px]"
               >
                 {uploading ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   "Sync to Archive"
                 )}
