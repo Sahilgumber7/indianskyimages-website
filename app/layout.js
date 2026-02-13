@@ -37,8 +37,7 @@ export const metadata = {
 };
 
 import { ThemeProvider } from "../components/theme-provider";
-import SkyPulse from "../components/SkyPulse";
-import CelestialCursor from "../components/CelestialCursor";
+import GlobalEffects from "../components/GlobalEffects";
 
 export default function RootLayout({ children }) {
   return (
@@ -52,8 +51,7 @@ export default function RootLayout({ children }) {
           enableSystem
           disableTransitionOnChange
         >
-          <SkyPulse />
-          <CelestialCursor />
+          <GlobalEffects />
           {children}
           <Toaster position="top-right" richColors />
         </ThemeProvider>

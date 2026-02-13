@@ -27,4 +27,7 @@ const ImageSchema = new mongoose.Schema({
   },
 });
 
+ImageSchema.index({ uploaded_at: -1 });
+ImageSchema.index({ latitude: 1, longitude: 1 });
+
 export default mongoose.models.Image || mongoose.model('Image', ImageSchema);

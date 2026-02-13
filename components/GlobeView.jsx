@@ -1,33 +1,30 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useRef, useState } from "react";
-import Globe from "globe.gl";
+import { useEffect, useRef } from "react";
+import { useImages } from "../hooks/useImage";
 
 export default function GlobeView() {
-  const globeRef = useRef();
-  const [images, setImages] = useState([]);
+  const globeRef = useRef(null);
+  const globeInstanceRef = useRef(null);
+  const { images } = useImages();
 
   useEffect(() => {
-    async function fetchImages() {
-      try {
-        const res = await fetch("/api/images");
-        const json = await res.json();
-        if (res.ok) setImages(json.data);
-        else console.error("Failed to fetch:", json.error);
-      } catch (err) {
-        console.error("Fetch error:", err);
-      }
+    if (!globeRef.current || images.length === 0) {
+      return;
     }
-    fetchImages();
-  }, []);
 
-  useEffect(() => {
-    if (images.length > 0 && globeRef.current) {
+    let mounted = true;
+
+    async function initGlobe() {
+      const { default: Globe } = await import("globe.gl");
+      if (!mounted || !globeRef.current) {
+        return;
+      }
+
       const globe = Globe()(globeRef.current)
-        // Monochromatic Globe Aesthetic
         .globeImageUrl("//unpkg.com/three-globe/example/img/earth-dark.jpg")
         .bumpImageUrl("//unpkg.com/three-globe/example/img/earth-topology.png")
-        .backgroundImageUrl(null) // Transparent to show SkyPulse
+        .backgroundImageUrl(null)
         .backgroundColor("rgba(0,0,0,0)")
         .pointLat((d) => d.latitude)
         .pointLng((d) => d.longitude)
@@ -63,7 +60,7 @@ export default function GlobeView() {
                 margin-bottom: 12px;
                 border: 1px solid rgba(255,255,255,0.1);
               ">
-                <img src="${d.image_url}" style="width: 100%; height: 100%; object-fit: cover;" />
+                <img src="${d.image_url}" loading="lazy" decoding="async" style="width: 100%; height: 100%; object-fit: cover;" />
               </div>
               <div style="font-weight: 800; font-size: 14px; letter-spacing: -0.02em; margin-bottom: 4px; color: #fff;">
                 ${d.location_name || d.locationName || "Somewhere in India"}
@@ -76,35 +73,40 @@ export default function GlobeView() {
         })
         .pointsData(images);
 
-      // Monochromatic Atmosphere
       globe.showAtmosphere(true);
       globe.atmosphereColor("#ffffff");
       globe.atmosphereAltitude(0.12);
 
-      // Controls
       globe.controls().autoRotate = true;
       globe.controls().autoRotateSpeed = 0.4;
       globe.controls().enableZoom = true;
       globe.controls().enablePan = true;
       globe.controls().dampingFactor = 0.1;
 
-      // Dark theme for controls
       globe.pointOfView({ lat: 20.59, lng: 78.96, altitude: 2.5 });
 
-      // Handle window resizing
       const handleResize = () => {
         globe.width(window.innerWidth);
         globe.height(window.innerHeight);
       };
 
-      window.addEventListener("resize", handleResize);
       handleResize();
-
-      return () => {
-        window.removeEventListener("resize", handleResize);
-        if (globeRef.current) globeRef.current.innerHTML = "";
-      };
+      window.addEventListener("resize", handleResize);
+      globeInstanceRef.current = { globe, handleResize };
     }
+
+    initGlobe();
+
+    return () => {
+      mounted = false;
+      const instance = globeInstanceRef.current;
+      if (instance) {
+        window.removeEventListener("resize", instance.handleResize);
+      }
+      if (globeRef.current) {
+        globeRef.current.innerHTML = "";
+      }
+    };
   }, [images]);
 
   return (
@@ -115,3 +117,4 @@ export default function GlobeView() {
     />
   );
 }
+

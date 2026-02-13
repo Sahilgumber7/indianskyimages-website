@@ -1,31 +1,77 @@
-// hooks/useImages.js
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+const CACHE_TTL_MS = 60 * 1000;
+let cachedImages = null;
+let cacheTimestamp = 0;
+let inflightRequest = null;
+
+function isCacheFresh() {
+  return cachedImages && Date.now() - cacheTimestamp < CACHE_TTL_MS;
+}
+
+async function fetchImagesWithCache() {
+  if (isCacheFresh()) {
+    return cachedImages;
+  }
+
+  if (inflightRequest) {
+    return inflightRequest;
+  }
+
+  inflightRequest = fetch("/api/images", { cache: "no-store" })
+    .then(async (res) => {
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.error || "Failed to fetch images");
+      }
+      cachedImages = json.data || [];
+      cacheTimestamp = Date.now();
+      return cachedImages;
+    })
+    .finally(() => {
+      inflightRequest = null;
+    });
+
+  return inflightRequest;
+}
 
 export function useImages() {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    async function fetchImages() {
+    let cancelled = false;
+
+    async function load() {
       try {
-        const res = await fetch("/api/images");
-        const json = await res.json();
-        if (res.ok) setImages(json.data);
-        else console.error("Failed to fetch:", json.error);
+        const data = await fetchImagesWithCache();
+        if (!cancelled) {
+          setImages(data);
+        }
       } catch (err) {
+        if (!cancelled) {
+          setError(err);
+        }
         console.error("Fetch error:", err);
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
-    fetchImages();
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  // 🔎 computed arrays
   const mapImages = useMemo(
-    () => images.filter(img => img.latitude && img.longitude),
+    () => images.filter((img) => img.latitude && img.longitude),
     [images]
   );
 
-  return { images, mapImages, loading };
+  return { images, mapImages, loading, error };
 }

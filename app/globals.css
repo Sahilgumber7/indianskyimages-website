@@ -129,6 +129,7 @@
   .leaflet-popup-content {
     margin: 0 !important;
     width: auto !important;
+    max-width: min(78vw, 22rem) !important;
   }
 
   .leaflet-popup-tip-container {
@@ -153,5 +154,14 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }

@@ -1,7 +1,7 @@
 "use client";
 
+import Image from "next/image";
 import { useImages } from "../hooks/useImage";
-import { useEffect, useState } from "react";
 
 // Default masonry styles
 const columnItem = "break-inside-avoid mb-8 transition-all duration-700 hover:z-10";
@@ -55,12 +55,15 @@ export default function Gallery() {
                 className={`${columnItem} group relative overflow-hidden rounded-[2.5rem] bg-gray-50 dark:bg-white/5 border border-black/5 dark:border-white/5 hover:shadow-[0_32px_64px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_32px_64px_rgba(255,255,255,0.05)] hover:scale-[1.03] transition-all duration-700 animate-in fade-in slide-in-from-bottom-12 cursor-none`}
                 style={{ animationDelay: `${i * 100}ms`, animationFillMode: 'both' }}
               >
-                <div className="relative aspect-auto overflow-hidden">
-                  <img
+                <div className="relative aspect-auto overflow-hidden min-h-[280px]">
+                  <Image
                     src={img.image_url}
                     alt={img.locationName || "Skycap"}
-                    className="w-full object-cover transition-transform duration-1000 group-hover:scale-105 group-hover:blur-sm"
-                    loading="lazy"
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1536px) 33vw, 25vw"
+                    className="w-full h-auto object-cover transition-transform duration-1000 group-hover:scale-105 group-hover:blur-sm"
+                    loading={i < 2 ? "eager" : "lazy"}
+                    priority={i < 2}
                   />
                   {/* High-quality Apple-style Overlay */}
                   <div className="absolute inset-0 bg-white/10 dark:bg-black/20 opacity-0 group-hover:opacity-100 transition-all duration-500 backdrop-blur-md flex flex-col justify-end p-10">

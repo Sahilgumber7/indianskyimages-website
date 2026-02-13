@@ -10,7 +10,7 @@ import {
 } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Loader2 } from "lucide-react";
-import { LuUpload, LuX } from "react-icons/lu";
+import { LuUpload } from "react-icons/lu";
 
 import FileDropzone from "./FileDropzone";
 import PreviewCard from "./PreviewCard";
@@ -94,12 +94,12 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogContent
-        className="max-w-4xl w-[95vw] sm:w-full max-h-[90dvh] overflow-y-auto rounded-[2.5rem] shadow-[0_32px_64px_rgba(0,0,0,0.5)] p-0 bg-white/95 dark:bg-black/95 backdrop-blur-3xl border border-white/20 dark:border-white/10 transition-all duration-500 animate-in zoom-in-95 focus:outline-none no-scrollbar"
+        className="max-w-5xl w-[calc(100vw-1rem)] sm:w-[95vw] max-h-[calc(100dvh-1rem)] sm:max-h-[92dvh] overflow-y-auto rounded-[1.6rem] sm:rounded-[2.5rem] shadow-[0_32px_64px_rgba(0,0,0,0.5)] p-0 bg-white/95 dark:bg-black/95 backdrop-blur-3xl border border-white/20 dark:border-white/10 transition-all duration-500 animate-in zoom-in-95 focus:outline-none no-scrollbar"
       >
 
-        <div className="p-5 sm:p-12 space-y-6 sm:space-y-10">
+        <div className="p-4 sm:p-10 lg:p-12 space-y-6 sm:space-y-8">
           <DialogHeader className="flex flex-col space-y-1">
-            <DialogTitle className="text-2xl sm:text-4xl font-black tracking-tighter text-black dark:text-white uppercase">
+            <DialogTitle className="pr-12 text-2xl sm:text-4xl font-black tracking-tighter text-black dark:text-white uppercase">
               Contribute
             </DialogTitle>
             <p className="text-[11px] sm:text-sm text-black/40 dark:text-white/40 font-bold uppercase tracking-widest leading-relaxed">
@@ -107,7 +107,7 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
             </p>
           </DialogHeader>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
             <div className="space-y-6 sm:space-y-8">
               {/* Monochromatic Input */}
               <div className="space-y-2 sm:space-y-3 group">
@@ -119,7 +119,7 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
                   value={uploadedBy}
                   onChange={(e) => setUploadedBy(e.target.value)}
                   placeholder="Anonymous"
-                  className="w-full rounded-2xl border border-gray-100 dark:border-gray-800 bg-black/5 dark:bg-white/5 p-4 text-sm focus:ring-1 focus:ring-black dark:focus:ring-white outline-none transition-all duration-300 placeholder:text-gray-300 dark:text-white"
+                  className="w-full h-12 rounded-2xl border border-gray-100 dark:border-gray-800 bg-black/5 dark:bg-white/5 px-4 text-sm focus:ring-1 focus:ring-black dark:focus:ring-white outline-none transition-all duration-300 placeholder:text-gray-300 dark:text-white"
                 />
               </div>
 
@@ -134,12 +134,12 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
               </div>
             </div>
 
-            <div className="space-y-8">
+            <div className="space-y-6 sm:space-y-8">
               <div className="space-y-3">
                 <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 ml-1">
                   Preview & Meta
                 </label>
-                <div className="rounded-3xl overflow-hidden border border-gray-100 dark:border-gray-800 bg-gray-50/30 dark:bg-white/5 p-2 min-h-[260px] shadow-inner">
+                <div className="rounded-3xl overflow-hidden border border-gray-100 dark:border-gray-800 bg-gray-50/30 dark:bg-white/5 p-2 min-h-[220px] sm:min-h-[260px] shadow-inner">
                   <PreviewCard
                     preview={preview}
                     locationName={locationName}
@@ -157,15 +157,15 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
             </div>
           </div>
 
-          <DialogFooter className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-6 border-t border-gray-100 dark:border-white/5">
-            <div className="flex items-center gap-3">
+          <DialogFooter className="sticky bottom-0 pt-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-0 flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 border-t border-gray-100 dark:border-white/5 bg-white/90 dark:bg-black/85 backdrop-blur-xl">
+            <div className="flex items-center gap-3 order-2 sm:order-1">
               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
               <p className="text-[11px] font-bold text-gray-400 tracking-wide uppercase">
                 Privacy-First Encryption Active
               </p>
             </div>
 
-            <div className="flex gap-4 w-full sm:w-auto">
+            <div className="flex gap-4 w-full sm:w-auto order-1 sm:order-2">
               <Button
                 onClick={() => {
                   if (!gps && preview) {
@@ -174,7 +174,7 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
                   uploadImage({ image, uploadedBy, gps, locationName });
                 }}
                 disabled={uploading || !image}
-                className="w-full sm:w-auto rounded-full px-10 py-5 sm:py-7 bg-black dark:bg-white text-white dark:text-black font-black text-[12px] uppercase tracking-widest shadow-2xl active:scale-95 transition-all disabled:opacity-30 min-w-[180px]"
+                className="w-full sm:w-auto rounded-full px-8 h-12 sm:h-14 bg-black dark:bg-white text-white dark:text-black font-black text-[11px] sm:text-[12px] uppercase tracking-widest shadow-2xl active:scale-95 transition-all disabled:opacity-30 min-w-[180px]"
               >
                 {uploading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

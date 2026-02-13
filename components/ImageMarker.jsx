@@ -69,7 +69,15 @@ export default function ImageMarker({ img }) {
 
   return (
     <Marker position={[lat, lon]} icon={icon}>
-      <Popup className="apple-popup">
+      <Popup
+        className="apple-popup"
+        maxWidth={340}
+        minWidth={220}
+        autoPan
+        keepInView
+        autoPanPadding={[20, 20]}
+        closeButton={false}
+      >
         <MarkerPopupContent img={img} />
       </Popup>
     </Marker>
