@@ -113,9 +113,44 @@
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* --- Apple-Style Custom Map Popups --- */
+  .leaflet-popup-content-wrapper {
+    background: transparent !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border-radius: 2rem !important;
+    overflow: hidden;
+  }
+
+  .leaflet-popup-content {
+    margin: 0 !important;
+    width: auto !important;
+  }
+
+  .leaflet-popup-tip-container {
+    display: none !important;
+    /* Remove the "subtle layer" tip/anchor */
+  }
+
+  /* Monochromatic selection override */
+  ::selection {
+    background: black;
+    color: white;
+  }
+
+  .dark ::selection {
+    background: white;
+    color: black;
+  }
+
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }

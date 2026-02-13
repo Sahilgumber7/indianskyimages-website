@@ -5,7 +5,7 @@ const ImageSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  uploaded_by:{
+  uploaded_by: {
     type: String,
     default: "Anonymous",
   },
@@ -19,6 +19,10 @@ const ImageSchema = new mongoose.Schema({
   },
   longitude: {
     type: Number,
+    required: false,
+  },
+  location_name: {
+    type: String,
     required: false,
   },
 });

@@ -12,6 +12,7 @@ export async function POST(req) {
     const uploadedBy = formData.get("uploaded_by") || "Anonymous";
     const latitude = parseFloat(formData.get("latitude"));
     const longitude = parseFloat(formData.get("longitude"));
+    const locationName = formData.get("location_name") || "Archived Origin";
 
     if (!file || typeof file === "string") {
       return NextResponse.json({ error: "No image uploaded" }, { status: 400 });
@@ -33,6 +34,7 @@ export async function POST(req) {
       public_id: uploadResult.public_id,
       latitude: isNaN(latitude) ? null : latitude,
       longitude: isNaN(longitude) ? null : longitude,
+      location_name: locationName,
       uploaded_by: uploadedBy,
       uploaded_at: new Date(),
     });
@@ -42,6 +44,7 @@ export async function POST(req) {
       url: uploadResult.secure_url,
       latitude: isNaN(latitude) ? null : latitude,
       longitude: isNaN(longitude) ? null : longitude,
+      location_name: locationName,
       uploaded_by: uploadedBy,
     });
   } catch (error) {

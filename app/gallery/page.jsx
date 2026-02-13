@@ -1,37 +1,36 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
 import Gallery from "../../components/Gallery";
 import Header from "../../components/header";
 
 export default function GalleryPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
   const [isGlobeView, setIsGlobeView] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  // Load dark mode from localStorage
   useEffect(() => {
-    const storedTheme = localStorage.getItem("theme");
-    if (storedTheme) setDarkMode(storedTheme === "dark");
+    setMounted(true);
   }, []);
 
+  if (!mounted) return null;
+
   return (
-    <div className={`${darkMode ? "dark" : ""} min-h-screen bg-gray-50 dark:bg-gray-900 transition`}>
+    <div className="min-h-screen bg-white dark:bg-black transition-colors duration-700">
       {/* Header */}
       <Header
         isDialogOpen={isDialogOpen}
         setIsDialogOpen={setIsDialogOpen}
-        darkMode={darkMode}
-        setDarkMode={setDarkMode}
         isGlobeView={isGlobeView}
         setIsGlobeView={setIsGlobeView}
       />
 
-      {/* Gallery Content with top padding */}
+      {/* Gallery Content */}
       <main
-        className={`relative w-full transition  ${isDialogOpen ? "blur-sm" : ""}`}
+        className={`relative w-full transition-all duration-700 ${isDialogOpen ? "blur-xl" : ""}`}
       >
-        <Gallery darkMode={darkMode} />
+        <Gallery />
       </main>
     </div>
   );

@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import Header from "../components/header";
+import { useTheme } from "next-themes";
 
 // Dynamically import with SSR disabled
 const MapView = dynamic(() => import("../components/mapView"), { ssr: false });
@@ -9,28 +10,32 @@ const GlobeView = dynamic(() => import("../components/GlobeView"), { ssr: false 
 
 export default function Home() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
   const [isGlobeView, setIsGlobeView] = useState(false);
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
-  // Load dark mode from localStorage
+  // Prevent hydration mismatch for theme
   useEffect(() => {
-    const storedTheme = localStorage.getItem("theme");
-    if (storedTheme) setDarkMode(storedTheme === "dark");
+    setMounted(true);
   }, []);
 
+  if (!mounted) {
+    return null;
+  }
+
+  const isDark = resolvedTheme === "dark";
+
   return (
-    <div className={`${darkMode ? "dark" : ""} relative bg-white dark:bg-gray-900 min-h-screen transition`}>
+    <div className="relative bg-white dark:bg-black min-h-screen transition-colors duration-700">
       <Header
         isDialogOpen={isDialogOpen}
         setIsDialogOpen={setIsDialogOpen}
-        darkMode={darkMode}
-        setDarkMode={setDarkMode}
         isGlobeView={isGlobeView}
         setIsGlobeView={setIsGlobeView}
       />
 
-      <div className={`relative w-full h-screen transition ${isDialogOpen ? "blur-sm" : ""}`}>
-        {isGlobeView ? <GlobeView /> : <MapView darkMode={darkMode} />}
+      <div className={`relative w-full h-screen transition-all duration-700 ${isDialogOpen ? "blur-xl" : ""}`}>
+        {isGlobeView ? <GlobeView /> : <MapView darkMode={isDark} />}
       </div>
     </div>
   );
