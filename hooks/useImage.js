@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 const CACHE_TTL_MS = 60 * 1000;
+const STORAGE_KEY = "isi_images_cache_v1";
 let cachedImages = null;
 let cacheTimestamp = 0;
 let inflightRequest = null;
@@ -9,16 +10,43 @@ function isCacheFresh() {
   return cachedImages && Date.now() - cacheTimestamp < CACHE_TTL_MS;
 }
 
+function readStorageCache() {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed.images) || typeof parsed.timestamp !== "number") {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeStorageCache(images, timestamp) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ images, timestamp })
+    );
+  } catch {
+    // ignore storage quota/errors
+  }
+}
+
 async function fetchImagesWithCache() {
   if (isCacheFresh()) {
-    return cachedImages;
+    return { images: cachedImages, fromCache: true };
   }
 
   if (inflightRequest) {
     return inflightRequest;
   }
 
-  inflightRequest = fetch("/api/images", { cache: "no-store" })
+  inflightRequest = fetch("/api/images", { cache: "default" })
     .then(async (res) => {
       const json = await res.json();
       if (!res.ok) {
@@ -26,7 +54,8 @@ async function fetchImagesWithCache() {
       }
       cachedImages = json.data || [];
       cacheTimestamp = Date.now();
-      return cachedImages;
+      writeStorageCache(cachedImages, cacheTimestamp);
+      return { images: cachedImages, fromCache: false };
     })
     .finally(() => {
       inflightRequest = null;
@@ -43,25 +72,40 @@ export function useImages() {
   useEffect(() => {
     let cancelled = false;
 
-    async function load() {
+    const stored = readStorageCache();
+    if (stored && !cachedImages) {
+      cachedImages = stored.images;
+      cacheTimestamp = stored.timestamp;
+    }
+
+    if (cachedImages && !cancelled) {
+      setImages(cachedImages);
+      setLoading(false);
+    }
+
+    async function loadAndRefresh() {
       try {
-        const data = await fetchImagesWithCache();
+        const { images: freshImages, fromCache } = await fetchImagesWithCache();
         if (!cancelled) {
-          setImages(data);
+          setImages(freshImages);
+          if (!fromCache) {
+            setError(null);
+          }
         }
       } catch (err) {
-        if (!cancelled) {
+        if (!cancelled && !cachedImages) {
           setError(err);
+          setLoading(false);
         }
         console.error("Fetch error:", err);
       } finally {
-        if (!cancelled) {
+        if (!cancelled && !cachedImages) {
           setLoading(false);
         }
       }
     }
 
-    load();
+    loadAndRefresh();
 
     return () => {
       cancelled = true;

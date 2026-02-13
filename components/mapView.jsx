@@ -140,8 +140,12 @@ export default function MapView({ darkMode }) {
   const { mapImages, loading } = useImages();
   const [selectedClusterImages, setSelectedClusterImages] = useState(null);
   const [currentIdx, setCurrentIdx] = useState(0);
+  const [isImageLoading, setIsImageLoading] = useState(true);
+  const [hasImageError, setHasImageError] = useState(false);
   const touchStartRef = useRef(null);
   const touchEndRef = useRef(null);
+  const currentImage = selectedClusterImages?.[currentIdx];
+  const currentImageUrl = currentImage?.image_url || "";
 
   const onTouchStart = (e) => {
     touchEndRef.current = null;
@@ -197,6 +201,12 @@ export default function MapView({ darkMode }) {
     }
   };
 
+  useEffect(() => {
+    if (!selectedClusterImages) return;
+    setIsImageLoading(true);
+    setHasImageError(false);
+  }, [selectedClusterImages, currentIdx]);
+
   const tileUrl = darkMode
     ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
     : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
@@ -226,7 +236,8 @@ export default function MapView({ darkMode }) {
           <ClusterLayer
             images={mapImages}
             onClusterClick={(imgs) => {
-              setSelectedClusterImages(imgs);
+              const validImages = imgs.filter((img) => !!img?.image_url);
+              setSelectedClusterImages(validImages.length > 0 ? validImages : imgs);
               setCurrentIdx(0);
             }}
           />
@@ -235,11 +246,11 @@ export default function MapView({ darkMode }) {
 
       <Dialog open={!!selectedClusterImages} onOpenChange={(open) => !open && setSelectedClusterImages(null)}>
         <DialogContent className="max-w-5xl w-[calc(100vw-0.75rem)] sm:w-[95vw] md:w-[90vw] h-[calc(100dvh-0.75rem)] sm:h-[85vh] md:h-[80vh] p-0 overflow-hidden bg-white/95 dark:bg-black/95 backdrop-blur-3xl border border-white/20 dark:border-white/10 rounded-[1.5rem] sm:rounded-[2.5rem] md:rounded-[3rem] shadow-[0_50px_100px_rgba(0,0,0,0.5)] transition-all duration-500 animate-in fade-in zoom-in-95 focus:outline-none">
-          {selectedClusterImages && (
+          {selectedClusterImages && currentImageUrl && (
             <div className="absolute inset-0 z-0 opacity-30 dark:opacity-50 pointer-events-none">
               <img
-                key={`bg-${selectedClusterImages[currentIdx].image_url}`}
-                src={selectedClusterImages[currentIdx].image_url}
+                key={`bg-${currentImageUrl}`}
+                src={currentImageUrl}
                 className="w-full h-full object-cover blur-[100px] md:blur-[150px] scale-125 transition-all duration-[2000ms]"
                 alt=""
                 loading="lazy"
@@ -259,10 +270,6 @@ export default function MapView({ darkMode }) {
                   View full-resolution images from this location.
                 </DialogDescription>
                 <div className="flex flex-wrap items-center gap-3 pt-2">
-                  <span className="px-3 py-1 bg-black/10 dark:bg-white/10 backdrop-blur-xl rounded-full text-[10px] md:text-[11px] font-black tracking-widest uppercase text-black/60 dark:text-white/60 border border-black/5 dark:border-white/5 shadow-sm truncate max-w-[220px]">
-                    {selectedClusterImages?.[currentIdx].location_name || "Somewhere in India"}
-                  </span>
-                  <span className="text-[10px] font-black text-black/20 dark:text-white/20 hidden md:inline">•</span>
                   <span className="text-[10px] font-black tracking-widest uppercase text-black/40 dark:text-white/40 bg-black/5 dark:bg-white/10 px-3 py-1 rounded-full border border-black/5 dark:border-white/5 shadow-sm">
                     {currentIdx + 1} of {selectedClusterImages?.length}
                   </span>
@@ -284,14 +291,46 @@ export default function MapView({ darkMode }) {
 
               {selectedClusterImages && (
                 <div className="relative h-full w-full flex items-center justify-center touch-pan-y">
-                  <img
-                    key={selectedClusterImages[currentIdx].image_url}
-                    src={selectedClusterImages[currentIdx].image_url}
-                    className="max-h-[95%] max-w-[95%] object-contain rounded-3xl md:rounded-[3rem] shadow-[0_40px_80px_rgba(0,0,0,0.4)] animate-in fade-in slide-in-from-left-10 md:slide-in-from-left-20 duration-700 cubic-bezier(0.23, 1, 0.32, 1) pointer-events-none select-none border border-white/10"
-                    alt="Gallery view"
-                    loading="eager"
-                    decoding="async"
-                  />
+                  {currentImageUrl ? (
+                    <>
+                      <img
+                        key={currentImageUrl}
+                        src={currentImageUrl}
+                        className={`max-h-[95%] max-w-[95%] object-contain rounded-3xl md:rounded-[3rem] shadow-[0_40px_80px_rgba(0,0,0,0.4)] animate-in fade-in slide-in-from-left-10 md:slide-in-from-left-20 duration-700 cubic-bezier(0.23, 1, 0.32, 1) pointer-events-none select-none border border-white/10 ${isImageLoading ? "opacity-0" : "opacity-100"} transition-opacity`}
+                        alt="Gallery view"
+                        loading="eager"
+                        decoding="async"
+                        onLoad={() => {
+                          setIsImageLoading(false);
+                          setHasImageError(false);
+                        }}
+                        onError={() => {
+                          setIsImageLoading(false);
+                          setHasImageError(true);
+                        }}
+                      />
+                      {isImageLoading && !hasImageError && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-[88%] h-[88%] rounded-3xl md:rounded-[3rem] border border-white/10 bg-white/10 dark:bg-white/5 animate-pulse" />
+                        </div>
+                      )}
+                      {hasImageError && (
+                        <div className="absolute inset-0 flex items-center justify-center px-6">
+                          <div className="w-[88%] h-[88%] rounded-3xl md:rounded-[3rem] border border-white/10 bg-white/15 dark:bg-white/5 backdrop-blur-xl flex items-center justify-center">
+                            <p className="text-[11px] font-black tracking-widest uppercase text-black/50 dark:text-white/50 text-center">
+                              Image unavailable
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="w-[88%] h-[88%] rounded-3xl md:rounded-[3rem] border border-white/10 bg-white/15 dark:bg-white/5 backdrop-blur-xl flex items-center justify-center">
+                      <p className="text-[11px] font-black tracking-widest uppercase text-black/50 dark:text-white/50 text-center">
+                        No image source
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -302,7 +341,7 @@ export default function MapView({ darkMode }) {
               </div>
             </div>
 
-            <div className="w-full p-4 sm:p-6 md:p-10 pb-[max(1rem,env(safe-area-inset-bottom))] flex flex-col items-center gap-3 sm:gap-4 md:gap-6 border-t border-black/5 dark:border-white/5 bg-white/70 dark:bg-black/60 backdrop-blur-xl">
+            <div className="w-full p-3 sm:p-4 md:p-6 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex flex-col items-center gap-2 sm:gap-3 md:gap-4 border-t border-black/5 dark:border-white/5 bg-white/70 dark:bg-black/60 backdrop-blur-xl">
               <div className="flex md:hidden items-center gap-5 mb-1">
                 <button onClick={prevImage} className="w-12 h-12 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/5 active:bg-black/10 dark:active:bg-white/10 text-black dark:text-white border border-black/5 dark:border-white/5">
                   <LuChevronLeft className="text-xl" />
@@ -313,21 +352,9 @@ export default function MapView({ darkMode }) {
                 </button>
               </div>
 
-              <div className="flex gap-2.5 md:gap-3 overflow-x-auto pb-2 sm:pb-4 max-w-full no-scrollbar px-2 sm:px-4">
-                {selectedClusterImages?.map((img, idx) => (
-                  <div
-                    key={idx}
-                    onClick={() => setCurrentIdx(idx)}
-                    className={`w-12 h-12 md:w-14 md:h-14 flex-shrink-0 rounded-lg md:rounded-xl overflow-hidden cursor-pointer transition-all duration-300 border-2 ${currentIdx === idx ? "border-black dark:border-white scale-110 shadow-lg" : "border-transparent opacity-40 hover:opacity-100"}`}
-                  >
-                    <img src={img.image_url} className="w-full h-full object-cover" alt="" loading="lazy" decoding="async" />
-                  </div>
-                ))}
-              </div>
-
               <div className="hidden md:flex bg-black/5 dark:bg-white/5 backdrop-blur-2xl border border-black/5 dark:border-white/10 px-6 py-2 rounded-full">
                 <p className="text-black/60 dark:text-white/60 text-[10px] font-black tracking-widest uppercase">
-                  By {selectedClusterImages?.[currentIdx].uploaded_by || "Anonymous"}
+                  By {currentImage?.uploaded_by || "Anonymous"}
                 </p>
               </div>
             </div>
@@ -350,4 +377,3 @@ export default function MapView({ darkMode }) {
     </div>
   );
 }
-
