@@ -236,33 +236,34 @@ export default function MapView({ darkMode }) {
       <Dialog open={!!selectedClusterImages} onOpenChange={(open) => !open && setSelectedClusterImages(null)}>
         <DialogContent className="max-w-5xl w-[calc(100vw-0.75rem)] sm:w-[95vw] md:w-[90vw] h-[calc(100dvh-0.75rem)] sm:h-[85vh] md:h-[80vh] p-0 overflow-hidden bg-white/95 dark:bg-black/95 backdrop-blur-3xl border border-white/20 dark:border-white/10 rounded-[1.5rem] sm:rounded-[2.5rem] md:rounded-[3rem] shadow-[0_50px_100px_rgba(0,0,0,0.5)] transition-all duration-500 animate-in fade-in zoom-in-95 focus:outline-none">
           {selectedClusterImages && (
-            <div className="absolute inset-0 z-0 opacity-10 dark:opacity-20 pointer-events-none">
+            <div className="absolute inset-0 z-0 opacity-30 dark:opacity-50 pointer-events-none">
               <img
                 key={`bg-${selectedClusterImages[currentIdx].image_url}`}
                 src={selectedClusterImages[currentIdx].image_url}
-                className="w-full h-full object-cover blur-[50px] md:blur-[80px] scale-125 transition-all duration-1000"
+                className="w-full h-full object-cover blur-[100px] md:blur-[150px] scale-125 transition-all duration-[2000ms]"
                 alt=""
                 loading="lazy"
                 decoding="async"
               />
+              <div className="absolute inset-0 bg-gradient-to-b from-white/30 dark:from-black/50 via-transparent to-white/50 dark:to-black/70" />
             </div>
           )}
 
           <div className="relative z-10 w-full h-full flex flex-col">
-            <div className="w-full p-4 sm:p-6 md:p-8 pr-14 sm:pr-16 flex items-center justify-between">
-              <div className="flex flex-col max-w-[85%] sm:max-w-[70%]">
-                <DialogTitle className="text-2xl md:text-3xl font-black tracking-tighter text-black dark:text-white lowercase">
+            <div className="w-full p-6 sm:p-8 md:p-10 pr-14 sm:pr-16 flex items-start justify-between">
+              <div className="flex flex-col space-y-2 max-w-[85%] sm:max-w-[70%]">
+                <DialogTitle className="text-3xl md:text-5xl font-black tracking-tighter text-black dark:text-white lowercase leading-none">
                   indianskyimages archive.
                 </DialogTitle>
                 <DialogDescription className="sr-only">
                   View full-resolution images from this location.
                 </DialogDescription>
-                <div className="mt-1 flex flex-wrap items-center gap-2">
-                  <span className="px-2 py-0.5 md:px-3 md:py-1 bg-black/5 dark:bg-white/10 rounded-full text-[9px] md:text-[10px] font-black tracking-widest uppercase text-black/50 dark:text-white/50 truncate max-w-[58vw] sm:max-w-[150px]">
+                <div className="flex flex-wrap items-center gap-3 pt-2">
+                  <span className="px-3 py-1 bg-black/10 dark:bg-white/10 backdrop-blur-xl rounded-full text-[10px] md:text-[11px] font-black tracking-widest uppercase text-black/60 dark:text-white/60 border border-black/5 dark:border-white/5 shadow-sm truncate max-w-[220px]">
                     {selectedClusterImages?.[currentIdx].location_name || "Somewhere in India"}
                   </span>
                   <span className="text-[10px] font-black text-black/20 dark:text-white/20 hidden md:inline">•</span>
-                  <span className="text-[9px] md:text-[10px] font-black tracking-widest uppercase text-black/40 dark:text-white/40">
+                  <span className="text-[10px] font-black tracking-widest uppercase text-black/40 dark:text-white/40 bg-black/5 dark:bg-white/10 px-3 py-1 rounded-full border border-black/5 dark:border-white/5 shadow-sm">
                     {currentIdx + 1} of {selectedClusterImages?.length}
                   </span>
                 </div>
@@ -286,7 +287,7 @@ export default function MapView({ darkMode }) {
                   <img
                     key={selectedClusterImages[currentIdx].image_url}
                     src={selectedClusterImages[currentIdx].image_url}
-                    className="max-h-full max-w-full object-contain rounded-2xl md:rounded-[2.5rem] shadow-2xl animate-in fade-in slide-in-from-left-10 md:slide-in-from-left-20 duration-700 cubic-bezier(0.23, 1, 0.32, 1) pointer-events-none select-none"
+                    className="max-h-[95%] max-w-[95%] object-contain rounded-3xl md:rounded-[3rem] shadow-[0_40px_80px_rgba(0,0,0,0.4)] animate-in fade-in slide-in-from-left-10 md:slide-in-from-left-20 duration-700 cubic-bezier(0.23, 1, 0.32, 1) pointer-events-none select-none border border-white/10"
                     alt="Gallery view"
                     loading="eager"
                     decoding="async"
