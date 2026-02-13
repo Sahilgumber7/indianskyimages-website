@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Gallery from "../../components/Gallery";
 import Header from "../../components/header";
+import SiteFooter from "../../components/SiteFooter";
 
 export default function GalleryPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -24,6 +25,7 @@ export default function GalleryPage() {
       >
         <Gallery />
       </main>
+      <SiteFooter />
     </div>
   );
 }

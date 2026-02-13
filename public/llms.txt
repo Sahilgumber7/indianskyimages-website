@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+
+Preferred-Content: html
+Site-Name: Indian Sky Images
+Contact: support@indianskyimages.vercel.app

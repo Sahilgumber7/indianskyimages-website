@@ -35,10 +35,17 @@ export default function Image() {
           Indian Sky Images
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <div style={{ fontSize: 72, fontWeight: 800, lineHeight: 1.05 }}>
-            Explore And Share
-            <br />
-            India&apos;s Sky
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              fontSize: 72,
+              fontWeight: 800,
+              lineHeight: 1.05,
+            }}
+          >
+            <span>Explore And Share</span>
+            <span>India&apos;s Sky</span>
           </div>
           <div style={{ fontSize: 30, opacity: 0.9 }}>
             Community archive of sunrise, sunset, and celestial photography

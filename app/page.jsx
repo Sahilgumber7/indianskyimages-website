@@ -2,6 +2,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import Header from "../components/header";
+import SiteFooter from "../components/SiteFooter";
 import { useTheme } from "next-themes";
 
 // Dynamically import with SSR disabled
@@ -45,6 +46,7 @@ export default function Home() {
       <div className={`relative w-full h-screen transition-all duration-700 ${isDialogOpen ? "blur-xl" : ""}`}>
         {isGlobeView ? <GlobeView /> : <MapView darkMode={isDark} />}
       </div>
+      <SiteFooter />
     </main>
   );
 }
