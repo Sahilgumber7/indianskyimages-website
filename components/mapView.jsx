@@ -11,6 +11,14 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "./ui/dial
 import { Button } from "./ui/button";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 
+const INITIAL_CLUSTER_LOAD = 80;
+
+function buildFastImageUrl(url, { width = 1600, quality = "auto:good" } = {}) {
+  if (!url || typeof url !== "string") return "";
+  if (!url.includes("res.cloudinary.com") || !url.includes("/upload/")) return url;
+  return url.replace("/upload/", `/upload/f_auto,q_${quality},c_limit,w_${width}/`);
+}
+
 function ClusterLayer({ images, onClusterClick }) {
   const map = useMap();
   const [clusters, setClusters] = useState([]);
@@ -64,22 +72,26 @@ function ClusterLayer({ images, onClusterClick }) {
         const { cluster, point_count: pointCount } = feature.properties;
 
         if (cluster) {
-          const firstLeaf = index.getLeaves(feature.id, 1)[0];
-          const previewUrl = firstLeaf?.properties?.img?.image_url;
-
           return (
-            <div key={`cluster-${feature.id}`}>
-              <ClusterMarker
-                position={[latitude, longitude]}
-                count={pointCount}
-                previewUrl={previewUrl}
-                onClick={() => {
-                  const clusterPoints = index.getLeaves(feature.id, pointCount);
-                  const clusterImages = clusterPoints.map((p) => p.properties.img);
-                  onClusterClick(clusterImages);
-                }}
-              />
-            </div>
+            <ClusterMarker
+              key={`cluster-${feature.id}`}
+              position={[latitude, longitude]}
+              count={pointCount}
+              onClick={() => {
+                const initialCount = Math.min(pointCount, INITIAL_CLUSTER_LOAD);
+                const initialPoints = index.getLeaves(feature.id, initialCount, 0);
+                const initialImages = initialPoints.map((p) => p.properties.img);
+                onClusterClick(initialImages, false);
+
+                if (pointCount > initialCount) {
+                  setTimeout(() => {
+                    const remainingPoints = index.getLeaves(feature.id, pointCount - initialCount, initialCount);
+                    const remainingImages = remainingPoints.map((p) => p.properties.img);
+                    onClusterClick(remainingImages, true);
+                  }, 0);
+                }
+              }}
+            />
           );
         }
 
@@ -89,55 +101,46 @@ function ClusterLayer({ images, onClusterClick }) {
   );
 }
 
-function ClusterMarker({ position, count, previewUrl, onClick }) {
+function ClusterMarker({ position, count, onClick }) {
+  const size = count > 99 ? 56 : count > 19 ? 48 : 40;
+
   const icon = useMemo(
     () =>
       L.divIcon({
         html: `
-      <div class="group" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-        <div style="position: absolute; width: 48px; height: 48px; background: #fff; border-radius: 12px; transform: rotate(-3deg) translate(-2px, -2px); border: 1.5px solid rgba(0,0,0,0.1); z-index: 1;"></div>
-        <div style="position: absolute; width: 48px; height: 48px; background: #fff; border-radius: 12px; transform: rotate(3deg) translate(2px, 2px); border: 1.5px solid rgba(0,0,0,0.1); z-index: 2;"></div>
-
+      <div style="width: ${size}px; height: ${size}px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
         <div style="
-          position: relative;
-          width: 52px; height: 52px;
-          background: #fff;
-          border-radius: 12px;
-          overflow: hidden;
-          border: 2px solid #fff;
-          box-shadow: 0 12px 30px rgba(0,0,0,0.3);
-          transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-          z-index: 3;
-        " class="group-hover:scale-110 group-hover:rotate-0">
-          <img src="${previewUrl}" loading="lazy" decoding="async" style="width: 100%; height: 100%; object-fit: cover;" />
-
-          <div style="
-            position: absolute;
-            inset: 0;
-            background: rgba(0,0,0,0.4);
-            backdrop-filter: blur(4px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-family: -apple-system, system-ui, sans-serif;
-          ">
-            <span style="font-size: 18px; font-weight: 800; letter-spacing: -0.05em;">${count}</span>
-          </div>
+          width: ${size}px;
+          height: ${size}px;
+          border-radius: 999px;
+          background: rgba(15, 23, 42, 0.85);
+          color: #fff;
+          border: 2px solid rgba(255,255,255,0.75);
+          box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: -apple-system, system-ui, sans-serif;
+          font-weight: 800;
+          font-size: ${count > 99 ? 14 : 15}px;
+          letter-spacing: -0.02em;
+          line-height: 1;
+        ">
+          ${count}
         </div>
       </div>`,
         className: "custom-cluster-icon",
-        iconSize: [70, 70],
-        iconAnchor: [35, 35],
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2],
       }),
-    [count, previewUrl]
+    [count, size]
   );
 
   return <Marker position={position} icon={icon} eventHandlers={{ click: onClick }} />;
 }
 
 export default function MapView({ darkMode }) {
-  const { mapImages, loading } = useImages();
+  const { mapImages, loading } = useImages({ enabled: true });
   const [selectedClusterImages, setSelectedClusterImages] = useState(null);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [isImageLoading, setIsImageLoading] = useState(true);
@@ -146,6 +149,14 @@ export default function MapView({ darkMode }) {
   const touchEndRef = useRef(null);
   const currentImage = selectedClusterImages?.[currentIdx];
   const currentImageUrl = currentImage?.image_url || "";
+  const currentDisplayUrl = useMemo(
+    () => buildFastImageUrl(currentImageUrl, { width: 1800, quality: "auto:good" }),
+    [currentImageUrl]
+  );
+  const currentBackdropUrl = useMemo(
+    () => buildFastImageUrl(currentImageUrl, { width: 480, quality: "auto:low" }),
+    [currentImageUrl]
+  );
 
   const onTouchStart = (e) => {
     touchEndRef.current = null;
@@ -202,9 +213,26 @@ export default function MapView({ darkMode }) {
   };
 
   useEffect(() => {
-    if (!selectedClusterImages) return;
+    if (!currentImageUrl) return;
     setIsImageLoading(true);
     setHasImageError(false);
+  }, [currentImageUrl]);
+
+  useEffect(() => {
+    if (!selectedClusterImages?.length) return;
+
+    const preloadIdxs = [
+      (currentIdx + 1) % selectedClusterImages.length,
+      (currentIdx - 1 + selectedClusterImages.length) % selectedClusterImages.length,
+    ];
+
+    preloadIdxs.forEach((idx) => {
+      const nextUrl = selectedClusterImages[idx]?.image_url;
+      if (!nextUrl) return;
+      const img = new Image();
+      img.decoding = "async";
+      img.src = buildFastImageUrl(nextUrl, { width: 1400, quality: "auto:good" });
+    });
   }, [selectedClusterImages, currentIdx]);
 
   const tileUrl = darkMode
@@ -235,22 +263,28 @@ export default function MapView({ darkMode }) {
         {!loading && (
           <ClusterLayer
             images={mapImages}
-            onClusterClick={(imgs) => {
+            onClusterClick={(imgs, append = false) => {
               const validImages = imgs.filter((img) => !!img?.image_url);
-              setSelectedClusterImages(validImages.length > 0 ? validImages : imgs);
-              setCurrentIdx(0);
+              const nextBatch = validImages.length > 0 ? validImages : imgs;
+              setSelectedClusterImages((prev) => {
+                if (!append || !prev) return nextBatch;
+                return [...prev, ...nextBatch];
+              });
+              if (!append) {
+                setCurrentIdx(0);
+              }
             }}
           />
         )}
       </MapContainer>
 
       <Dialog open={!!selectedClusterImages} onOpenChange={(open) => !open && setSelectedClusterImages(null)}>
-        <DialogContent className="max-w-5xl w-[calc(100vw-0.75rem)] sm:w-[95vw] md:w-[90vw] h-[calc(100dvh-0.75rem)] sm:h-[85vh] md:h-[80vh] p-0 overflow-hidden bg-white/95 dark:bg-black/95 backdrop-blur-3xl border border-white/20 dark:border-white/10 rounded-[1.5rem] sm:rounded-[2.5rem] md:rounded-[3rem] shadow-[0_50px_100px_rgba(0,0,0,0.5)] transition-all duration-500 animate-in fade-in zoom-in-95 focus:outline-none">
+        <DialogContent className="max-w-5xl w-[calc(100vw-0.75rem)] sm:w-[95vw] md:w-[90vw] h-[calc(100dvh-0.75rem)] sm:h-[85vh] md:h-[80vh] p-0 overflow-hidden bg-white/95 dark:bg-black/95 backdrop-blur-3xl border border-white/20 dark:border-white/10 rounded-[1.25rem] sm:rounded-[2.5rem] md:rounded-[3rem] shadow-[0_50px_100px_rgba(0,0,0,0.5)] transition-all duration-500 animate-in fade-in zoom-in-95 focus:outline-none">
           {selectedClusterImages && currentImageUrl && (
             <div className="absolute inset-0 z-0 opacity-30 dark:opacity-50 pointer-events-none">
               <img
-                key={`bg-${currentImageUrl}`}
-                src={currentImageUrl}
+                key={`bg-${currentBackdropUrl}`}
+                src={currentBackdropUrl}
                 className="w-full h-full object-cover blur-[100px] md:blur-[150px] scale-125 transition-all duration-[2000ms]"
                 alt=""
                 loading="lazy"
@@ -261,9 +295,9 @@ export default function MapView({ darkMode }) {
           )}
 
           <div className="relative z-10 w-full h-full flex flex-col">
-            <div className="w-full p-6 sm:p-8 md:p-10 pr-14 sm:pr-16 flex items-start justify-between">
+            <div className="w-full p-4 sm:p-8 md:p-10 pr-12 sm:pr-16 flex items-start justify-between">
               <div className="flex flex-col space-y-2 max-w-[85%] sm:max-w-[70%]">
-                <DialogTitle className="text-3xl md:text-5xl font-black tracking-tighter text-black dark:text-white lowercase leading-none">
+                <DialogTitle className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tighter text-black dark:text-white lowercase leading-none">
                   indianskyimages archive.
                 </DialogTitle>
                 <DialogDescription className="sr-only">
@@ -278,7 +312,7 @@ export default function MapView({ darkMode }) {
             </div>
 
             <div
-              className="flex-1 w-full flex items-center justify-center group overflow-hidden px-3 sm:px-4 md:px-10 relative"
+              className="flex-1 w-full flex items-center justify-center group overflow-hidden px-2 sm:px-4 md:px-10 relative"
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
@@ -294,11 +328,12 @@ export default function MapView({ darkMode }) {
                   {currentImageUrl ? (
                     <>
                       <img
-                        key={currentImageUrl}
-                        src={currentImageUrl}
+                        key={currentDisplayUrl}
+                        src={currentDisplayUrl}
                         className={`max-h-[95%] max-w-[95%] object-contain rounded-3xl md:rounded-[3rem] shadow-[0_40px_80px_rgba(0,0,0,0.4)] animate-in fade-in slide-in-from-left-10 md:slide-in-from-left-20 duration-700 cubic-bezier(0.23, 1, 0.32, 1) pointer-events-none select-none border border-white/10 ${isImageLoading ? "opacity-0" : "opacity-100"} transition-opacity`}
                         alt="Gallery view"
                         loading="eager"
+                        fetchPriority="high"
                         decoding="async"
                         onLoad={() => {
                           setIsImageLoading(false);
@@ -341,8 +376,8 @@ export default function MapView({ darkMode }) {
               </div>
             </div>
 
-            <div className="w-full p-3 sm:p-4 md:p-6 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex flex-col items-center gap-2 sm:gap-3 md:gap-4 border-t border-black/5 dark:border-white/5 bg-white/70 dark:bg-black/60 backdrop-blur-xl">
-              <div className="flex md:hidden items-center gap-5 mb-1">
+            <div className="w-full p-2.5 sm:p-4 md:p-6 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex flex-col items-center gap-2 sm:gap-3 md:gap-4 border-t border-black/5 dark:border-white/5 bg-white/70 dark:bg-black/60 backdrop-blur-xl">
+              <div className="flex md:hidden items-center gap-3 mb-1">
                 <button onClick={prevImage} className="w-12 h-12 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/5 active:bg-black/10 dark:active:bg-white/10 text-black dark:text-white border border-black/5 dark:border-white/5">
                   <LuChevronLeft className="text-xl" />
                 </button>

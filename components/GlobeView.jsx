@@ -6,7 +6,7 @@ import { useImages } from "../hooks/useImage";
 export default function GlobeView() {
   const globeRef = useRef(null);
   const globeInstanceRef = useRef(null);
-  const { images } = useImages();
+  const { images } = useImages({ enabled: true });
 
   useEffect(() => {
     if (!globeRef.current || images.length === 0) {
@@ -22,8 +22,8 @@ export default function GlobeView() {
       }
 
       const globe = Globe()(globeRef.current)
-        .globeImageUrl("//unpkg.com/three-globe/example/img/earth-dark.jpg")
-        .bumpImageUrl("//unpkg.com/three-globe/example/img/earth-topology.png")
+        .globeImageUrl("/assets/globe/earth-dark.jpg")
+        .bumpImageUrl("/assets/globe/earth-topology.png")
         .backgroundImageUrl(null)
         .backgroundColor("rgba(0,0,0,0)")
         .pointLat((d) => d.latitude)

@@ -37,11 +37,11 @@ export default function Header({
   const isDark = mounted && (theme === "dark" || resolvedTheme === "dark");
 
   return (
-    <header className="fixed top-6 left-1/2 -translate-x-1/2 w-[95%] max-w-7xl px-6 py-3 bg-white/70 dark:bg-black/70 backdrop-blur-2xl border border-white/20 dark:border-white/10 rounded-[2rem] shadow-[0_8px_32px_rgba(0,0,0,0.1)] z-50 flex justify-between items-center transition-all duration-700 animate-in fade-in slide-in-from-top-4">
+    <header className="fixed top-3 sm:top-6 left-1/2 -translate-x-1/2 w-[calc(100%-1rem)] sm:w-[95%] max-w-7xl px-3 sm:px-6 py-2.5 sm:py-3 bg-white/70 dark:bg-black/70 backdrop-blur-2xl border border-white/20 dark:border-white/10 rounded-[1.25rem] sm:rounded-[2rem] shadow-[0_8px_32px_rgba(0,0,0,0.1)] z-50 flex justify-between items-center transition-all duration-700 animate-in fade-in slide-in-from-top-4">
       {/* Apple-style Logo */}
       <div className="flex items-center gap-4">
         <Link href="/">
-          <span className="font-bold text-xl md:text-2xl text-black dark:text-white tracking-tight hover:opacity-70 transition-opacity cursor-pointer">
+          <span className="font-bold text-base sm:text-xl md:text-2xl text-black dark:text-white tracking-tight hover:opacity-70 transition-opacity cursor-pointer">
             indianskyimages.
           </span>
         </Link>
@@ -117,21 +117,21 @@ export default function Header({
       <div className="flex sm:hidden items-center gap-2">
         <Button
           onClick={() => setIsDialogOpen(true)}
-          className="bg-black dark:bg-white text-white dark:text-black rounded-full w-10 h-10 p-0 flex items-center justify-center"
+          className="bg-black dark:bg-white text-white dark:text-black rounded-full w-9 h-9 sm:w-10 sm:h-10 p-0 flex items-center justify-center"
         >
-          <LuUpload className="text-lg" />
+          <LuUpload className="text-base sm:text-lg" />
         </Button>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/10 text-black dark:text-white"
+          className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/10 text-black dark:text-white"
         >
-          {mobileMenuOpen ? <HiX className="text-xl" /> : <HiMenu className="text-xl" />}
+          {mobileMenuOpen ? <HiX className="text-lg sm:text-xl" /> : <HiMenu className="text-lg sm:text-xl" />}
         </button>
       </div>
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="absolute top-[calc(100%+12px)] right-0 w-64 bg-white/90 dark:bg-black/90 backdrop-blur-2xl border border-white/20 dark:border-white/10 rounded-[2rem] p-4 flex flex-col gap-2 shadow-2xl animate-in fade-in slide-in-from-top-4">
+        <div className="absolute top-[calc(100%+12px)] right-0 w-[min(18rem,calc(100vw-1rem))] max-h-[70dvh] overflow-y-auto bg-white/90 dark:bg-black/90 backdrop-blur-2xl border border-white/20 dark:border-white/10 rounded-[1.25rem] sm:rounded-[2rem] p-3 sm:p-4 flex flex-col gap-2 shadow-2xl animate-in fade-in slide-in-from-top-4">
           {/* Mobile Items */}
           <button
             onClick={() => { setIsGlobeView(!isGlobeView); setMobileMenuOpen(false); }}

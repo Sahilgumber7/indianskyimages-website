@@ -64,12 +64,17 @@ async function fetchImagesWithCache() {
   return inflightRequest;
 }
 
-export function useImages() {
+export function useImages({ enabled = false } = {}) {
   const [images, setImages] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(enabled);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
 
     const stored = readStorageCache();
@@ -110,7 +115,7 @@ export function useImages() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [enabled]);
 
   const mapImages = useMemo(
     () => images.filter((img) => img.latitude && img.longitude),
