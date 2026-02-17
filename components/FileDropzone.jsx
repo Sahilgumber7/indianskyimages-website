@@ -2,13 +2,13 @@
 
 import { Upload } from "lucide-react";
 
-export default function FileDropzone({ onFileSelect, preview }) {
+export default function FileDropzone({ onFilesSelect, selectedCount = 0 }) {
   return (
     <div
       onDrop={(e) => {
         e.preventDefault();
-        const file = e.dataTransfer.files?.[0];
-        if (file) onFileSelect(file);
+        const files = e.dataTransfer.files;
+        if (files?.length) onFilesSelect(files);
       }}
       onDragOver={(e) => e.preventDefault()}
       className="group relative flex flex-col items-center justify-center w-full min-h-[160px] rounded-[2rem] border-2 border-dashed border-black/10 dark:border-white/10 hover:border-black dark:hover:border-white bg-black/5 dark:bg-white/5 cursor-pointer transition-all duration-500 overflow-hidden"
@@ -19,10 +19,10 @@ export default function FileDropzone({ onFileSelect, preview }) {
         </div>
         <div className="space-y-1">
           <p className="text-sm font-black text-black dark:text-white uppercase tracking-widest">
-            {preview ? "Replace" : "Import Capture"}
+            {selectedCount > 0 ? `${selectedCount} selected` : "Import Captures"}
           </p>
           <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest leading-relaxed">
-            {preview ? "Drop to swap file" : "Drag + Drop or Browse"}
+            {selectedCount > 0 ? "Drop to replace selection" : "Drag + Drop or Browse"}
           </p>
         </div>
       </div>
@@ -30,7 +30,8 @@ export default function FileDropzone({ onFileSelect, preview }) {
       <input
         type="file"
         accept="image/*"
-        onChange={(e) => onFileSelect(e.target.files?.[0])}
+        multiple
+        onChange={(e) => onFilesSelect(e.target.files)}
         className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
       />
     </div>

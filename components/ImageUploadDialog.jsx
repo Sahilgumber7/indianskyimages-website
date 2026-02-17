@@ -20,35 +20,35 @@ import { toast } from "sonner";
 import exifr from "exifr";
 
 export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
-  const [image, setImage] = useState(null);
-  const [preview, setPreview] = useState(null);
+  const [selectedItems, setSelectedItems] = useState([]);
   const [uploadedBy, setUploadedBy] = useState("");
-  const [gps, setGps] = useState(null);
-  const [locationName, setLocationName] = useState("");
   const [error, setError] = useState(null);
+  const [previewLocationName, setPreviewLocationName] = useState("");
 
-  const { uploadImage, uploading, error: uploadError, setUploadError } = useUpload(() => {
+  const preview = selectedItems[0]?.preview || null;
+  const previewGps = selectedItems[0]?.gps || null;
+
+  const { uploadImage, uploadImages, uploading, uploadStats, error: uploadError } = useUpload(() => {
     setIsDialogOpen(false);
     resetForm();
   });
 
   const resetForm = useCallback(() => {
-    setImage(null);
-    setPreview(null);
+    setSelectedItems([]);
     setUploadedBy("");
-    setGps(null);
-    setLocationName("");
+    setPreviewLocationName("");
     setError(null);
   }, []);
 
   useEffect(() => {
-    if (!gps) {
-      setLocationName("");
+    if (!previewGps) {
+      setPreviewLocationName("");
       return;
     }
+
     const fetchName = async () => {
       try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${gps.latitude}&lon=${gps.longitude}`);
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${previewGps.latitude}&lon=${previewGps.longitude}`);
         const data = await res.json();
         if (data && data.address) {
           const addr = data.address;
@@ -61,50 +61,64 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
           if (state) parts.push(state);
           if (country) parts.push(country);
 
-          setLocationName(parts.length > 0 ? parts.join(", ") : "Unknown Location");
+          setPreviewLocationName(parts.length > 0 ? parts.join(", ") : "Unknown Location");
         }
       } catch (e) {
         console.error("Preview geocode error:", e);
       }
     };
     fetchName();
-  }, [gps]);
+  }, [previewGps]);
 
-  const readFile = async (file) => {
-    if (!file) return;
+  const readFileAsDataUrl = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+  const readFiles = async (fileList) => {
+    const files = Array.from(fileList || []).filter((file) => file?.type?.startsWith("image/"));
+    if (files.length === 0) return;
     setError(null);
-    setImage(file);
-    const reader = new FileReader();
-    reader.onloadend = () => setPreview(reader.result);
-    reader.readAsDataURL(file);
 
-    try {
-      const output = await exifr.gps(file);
-      if (output) {
-        setGps({ latitude: output.latitude, longitude: output.longitude });
-      } else {
-        setGps(null);
-      }
-    } catch (e) {
-      console.error("EXIF Error:", e);
-      setGps(null);
-    }
+    const items = await Promise.all(
+      files.map(async (file) => {
+        const previewUrl = await readFileAsDataUrl(file);
+        let gps = null;
+        try {
+          const output = await exifr.gps(file);
+          if (output) {
+            gps = { latitude: output.latitude, longitude: output.longitude };
+          }
+        } catch (e) {
+          console.error("EXIF Error:", e);
+        }
+
+        return {
+          image: file,
+          preview: previewUrl,
+          gps,
+          locationName: "",
+        };
+      })
+    );
+
+    setSelectedItems(items);
   };
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogContent
-        className="max-w-5xl w-[calc(100vw-1rem)] sm:w-[95vw] max-h-[calc(100dvh-1rem)] sm:max-h-[92dvh] overflow-y-auto rounded-[1.6rem] sm:rounded-[2.5rem] shadow-[0_32px_64px_rgba(0,0,0,0.5)] p-0 bg-white/95 dark:bg-black/95 backdrop-blur-3xl border border-white/20 dark:border-white/10 transition-all duration-500 animate-in zoom-in-95 focus:outline-none no-scrollbar"
+        className="max-w-5xl w-[calc(100vw-1.5rem)] sm:w-[95vw] max-h-[84dvh] sm:max-h-[90dvh] overflow-y-auto rounded-[1.3rem] sm:rounded-[2.5rem] shadow-[0_32px_64px_rgba(0,0,0,0.5)] p-0 bg-white/95 dark:bg-black/95 backdrop-blur-3xl border border-white/20 dark:border-white/10 transition-all duration-500 animate-in zoom-in-95 focus:outline-none no-scrollbar"
       >
 
         <div className="p-4 sm:p-10 lg:p-12 space-y-6 sm:space-y-8">
           <DialogHeader className="flex flex-col space-y-1">
             <DialogTitle className="pr-12 text-2xl sm:text-4xl font-black tracking-tighter text-black dark:text-white uppercase">
-              Contribute
+              Upload Image
             </DialogTitle>
-            <p className="text-[11px] sm:text-sm text-black/40 dark:text-white/40 font-bold uppercase tracking-widest leading-relaxed">
-              Upload your capture to the archive.
-            </p>
           </DialogHeader>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
@@ -129,7 +143,7 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
                   Sky Capture
                 </label>
                 <div className="group transition-transform active:scale-[0.98]">
-                  <FileDropzone onFileSelect={readFile} preview={preview} />
+                  <FileDropzone onFilesSelect={readFiles} selectedCount={selectedItems.length} />
                 </div>
               </div>
             </div>
@@ -142,10 +156,20 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
                 <div className="rounded-3xl overflow-hidden border border-gray-100 dark:border-gray-800 bg-gray-50/30 dark:bg-white/5 p-2 min-h-[220px] sm:min-h-[260px] shadow-inner">
                   <PreviewCard
                     preview={preview}
-                    locationName={locationName}
-                    noLocation={!gps}
+                    locationName={previewLocationName}
+                    noLocation={!previewGps}
                   />
                 </div>
+                {selectedItems.length > 1 && (
+                  <p className="text-[11px] uppercase tracking-widest text-black/40 dark:text-white/40 px-1">
+                    {selectedItems.length} images selected
+                  </p>
+                )}
+                {uploading && uploadStats.total > 1 && (
+                  <p className="text-[11px] uppercase tracking-widest text-black/40 dark:text-white/40 px-1">
+                    Uploading {uploadStats.completed} / {uploadStats.total}
+                  </p>
+                )}
               </div>
 
               {/* Error messages */}
@@ -157,29 +181,32 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
             </div>
           </div>
 
-          <DialogFooter className="sticky bottom-0 pt-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-0 flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 border-t border-gray-100 dark:border-white/5 bg-white/90 dark:bg-black/85 backdrop-blur-xl">
-            <div className="flex items-center gap-3 order-2 sm:order-1">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <p className="text-[11px] font-bold text-gray-400 tracking-wide uppercase">
-                Privacy-First Encryption Active
-              </p>
-            </div>
-
+          <DialogFooter className="sticky bottom-0 pt-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-0 flex flex-col sm:flex-row items-center justify-end gap-4 sm:gap-6 border-t border-gray-100 dark:border-white/5 bg-white/90 dark:bg-black/85 backdrop-blur-xl">
             <div className="flex gap-4 w-full sm:w-auto order-1 sm:order-2">
               <Button
-                onClick={() => {
-                  if (!gps && preview) {
-                    toast.info("No GPS found. Mapping to center.");
+                onClick={async () => {
+                  if (!previewGps && preview) {
+                    toast.info("No GPS found. Using default map location.");
                   }
-                  uploadImage({ image, uploadedBy, gps, locationName });
+                  if (selectedItems.length > 1) {
+                    await uploadImages({ items: selectedItems, uploadedBy });
+                    return;
+                  }
+
+                  await uploadImage({
+                    image: selectedItems[0]?.image,
+                    uploadedBy,
+                    gps: selectedItems[0]?.gps,
+                    locationName: previewLocationName || "Unknown",
+                  });
                 }}
-                disabled={uploading || !image}
+                disabled={uploading || selectedItems.length === 0}
                 className="w-full sm:w-auto rounded-full px-8 h-12 sm:h-14 bg-black dark:bg-white text-white dark:text-black font-black text-[11px] sm:text-[12px] uppercase tracking-widest shadow-2xl active:scale-95 transition-all disabled:opacity-30 min-w-[180px]"
               >
                 {uploading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  "Sync to Archive"
+                  selectedItems.length > 1 ? `Upload ${selectedItems.length}` : "Upload"
                 )}
               </Button>
             </div>

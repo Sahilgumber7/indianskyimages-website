@@ -279,7 +279,7 @@ export default function MapView({ darkMode }) {
       </MapContainer>
 
       <Dialog open={!!selectedClusterImages} onOpenChange={(open) => !open && setSelectedClusterImages(null)}>
-        <DialogContent className="max-w-5xl w-[calc(100vw-0.75rem)] sm:w-[95vw] md:w-[90vw] h-[calc(100dvh-0.75rem)] sm:h-[85vh] md:h-[80vh] p-0 overflow-hidden bg-white/95 dark:bg-black/95 backdrop-blur-3xl border border-white/20 dark:border-white/10 rounded-[1.25rem] sm:rounded-[2.5rem] md:rounded-[3rem] shadow-[0_50px_100px_rgba(0,0,0,0.5)] transition-all duration-500 animate-in fade-in zoom-in-95 focus:outline-none">
+        <DialogContent className="max-w-5xl w-[calc(100vw-1.5rem)] sm:w-[95vw] md:w-[90vw] h-[84dvh] sm:h-[85vh] md:h-[80vh] p-0 overflow-hidden bg-white/95 dark:bg-black/95 backdrop-blur-3xl border border-white/20 dark:border-white/10 rounded-[1.1rem] sm:rounded-[2.5rem] md:rounded-[3rem] shadow-[0_50px_100px_rgba(0,0,0,0.5)] transition-all duration-500 animate-in fade-in zoom-in-95 focus:outline-none">
           {selectedClusterImages && currentImageUrl && (
             <div className="absolute inset-0 z-0 opacity-30 dark:opacity-50 pointer-events-none">
               <img
@@ -298,7 +298,7 @@ export default function MapView({ darkMode }) {
             <div className="w-full p-4 sm:p-8 md:p-10 pr-12 sm:pr-16 flex items-start justify-between">
               <div className="flex flex-col space-y-2 max-w-[85%] sm:max-w-[70%]">
                 <DialogTitle className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tighter text-black dark:text-white lowercase leading-none">
-                  indianskyimages archive.
+                  indianskyimages
                 </DialogTitle>
                 <DialogDescription className="sr-only">
                   View full-resolution images from this location.
@@ -381,7 +381,7 @@ export default function MapView({ darkMode }) {
                 <button onClick={prevImage} className="w-12 h-12 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/5 active:bg-black/10 dark:active:bg-white/10 text-black dark:text-white border border-black/5 dark:border-white/5">
                   <LuChevronLeft className="text-xl" />
                 </button>
-                <div className="text-[10px] font-black tracking-widest text-black/20 dark:text-white/20 uppercase">Swipe or Tap</div>
+                <div className="text-[10px] font-black tracking-widest text-black/20 dark:text-white/20 uppercase">Swipe</div>
                 <button onClick={nextImage} className="w-12 h-12 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/5 active:bg-black/10 dark:active:bg-white/10 text-black dark:text-white border border-black/5 dark:border-white/5">
                   <LuChevronRight className="text-xl" />
                 </button>
@@ -402,7 +402,7 @@ export default function MapView({ darkMode }) {
           <div className="flex flex-col items-center gap-6">
             <div className="w-16 h-16 border-[1px] border-black/10 dark:border-white/10 border-t-black dark:border-t-white rounded-full animate-spin" />
             <p className="text-[11px] font-black tracking-[0.3em] text-black dark:text-white uppercase opacity-40">
-              Synchronizing Archive
+              Loading Images
             </p>
           </div>
         </div>
