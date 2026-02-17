@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 const CACHE_TTL_MS = 60 * 1000;
 const STORAGE_KEY = "isi_images_cache_v1";
+export const IMAGE_UPLOADED_EVENT = "isi:image-uploaded";
 let cachedImages = null;
 let cacheTimestamp = 0;
 let inflightRequest = null;
@@ -37,16 +38,24 @@ function writeStorageCache(images, timestamp) {
   }
 }
 
-async function fetchImagesWithCache() {
-  if (isCacheFresh()) {
+function prependUniqueImage(list, image) {
+  if (!image?._id) {
+    return [image, ...(list || [])];
+  }
+  const existing = (list || []).filter((item) => item?._id !== image._id);
+  return [image, ...existing];
+}
+
+async function fetchImagesWithCache({ force = false } = {}) {
+  if (!force && isCacheFresh()) {
     return { images: cachedImages, fromCache: true };
   }
 
-  if (inflightRequest) {
+  if (!force && inflightRequest) {
     return inflightRequest;
   }
 
-  inflightRequest = fetch("/api/images", { cache: "default" })
+  inflightRequest = fetch("/api/images", { cache: force ? "no-store" : "default" })
     .then(async (res) => {
       const json = await res.json();
       if (!res.ok) {
@@ -88,9 +97,9 @@ export function useImages({ enabled = false } = {}) {
       setLoading(false);
     }
 
-    async function loadAndRefresh() {
+    async function loadAndRefresh(force = false) {
       try {
-        const { images: freshImages, fromCache } = await fetchImagesWithCache();
+        const { images: freshImages, fromCache } = await fetchImagesWithCache({ force });
         if (!cancelled) {
           setImages(freshImages);
           if (!fromCache) {
@@ -112,8 +121,28 @@ export function useImages({ enabled = false } = {}) {
 
     loadAndRefresh();
 
+    const onImageUploaded = (event) => {
+      const uploadedImage = event?.detail?.image;
+      if (!uploadedImage) {
+        return;
+      }
+
+      cachedImages = prependUniqueImage(cachedImages, uploadedImage);
+      cacheTimestamp = Date.now();
+      writeStorageCache(cachedImages, cacheTimestamp);
+      setImages((prev) => prependUniqueImage(prev, uploadedImage));
+      loadAndRefresh(true);
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener(IMAGE_UPLOADED_EVENT, onImageUploaded);
+    }
+
     return () => {
       cancelled = true;
+      if (typeof window !== "undefined") {
+        window.removeEventListener(IMAGE_UPLOADED_EVENT, onImageUploaded);
+      }
     };
   }, [enabled]);
 

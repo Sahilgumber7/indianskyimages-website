@@ -7,6 +7,13 @@ import cloudinary from "../../../lib/cloudinary";
 
 export async function POST(req) {
   try {
+    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      return NextResponse.json(
+        { error: "Cloudinary is not configured on the server." },
+        { status: 500 }
+      );
+    }
+
     const formData = await req.formData();
     const file = formData.get("image");
     const uploadedBy = formData.get("uploaded_by") || "Anonymous";
@@ -20,16 +27,17 @@ export async function POST(req) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Upload to Cloudinary
     const uploadResult = await new Promise((resolve, reject) => {
-      cloudinary.uploader.upload_stream(
-        { folder: "sky-images", resource_type: "image" },
-        (error, result) => (error ? reject(error) : resolve(result))
-      ).end(buffer);
+      cloudinary.uploader
+        .upload_stream(
+          { folder: "sky-images", resource_type: "image" },
+          (error, result) => (error ? reject(error) : resolve(result))
+        )
+        .end(buffer);
     });
 
     await connectDB();
-    await Image.create({
+    const created = await Image.create({
       image_url: uploadResult.secure_url,
       public_id: uploadResult.public_id,
       latitude: isNaN(latitude) ? null : latitude,
@@ -39,16 +47,26 @@ export async function POST(req) {
       uploaded_at: new Date(),
     });
 
-    return NextResponse.json({
-      message: "✅ Upload successful",
-      url: uploadResult.secure_url,
-      latitude: isNaN(latitude) ? null : latitude,
-      longitude: isNaN(longitude) ? null : longitude,
-      location_name: locationName,
-      uploaded_by: uploadedBy,
-    });
+    return NextResponse.json(
+      {
+        message: "Upload successful",
+        image: {
+          _id: String(created._id),
+          image_url: created.image_url,
+          latitude: created.latitude,
+          longitude: created.longitude,
+          location_name: created.location_name,
+          uploaded_by: created.uploaded_by,
+          uploaded_at: created.uploaded_at,
+        },
+      },
+      { status: 201 }
+    );
   } catch (error) {
-    console.error("❌ Upload route error:", error);
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    console.error("Upload route error:", error);
+    return NextResponse.json(
+      { error: error?.message || "Upload failed" },
+      { status: 500 }
+    );
   }
 }

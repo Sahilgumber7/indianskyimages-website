@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { toast } from "sonner";
+import { IMAGE_UPLOADED_EVENT } from "./useImage";
 
 export function useUpload(onSuccessCallback) {
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState(null);
+    const fallbackLatitude = 20.5937;
+    const fallbackLongitude = 78.9629;
 
     const uploadImage = async ({ image, uploadedBy, gps, locationName }) => {
         if (!image) {
@@ -18,8 +21,8 @@ export function useUpload(onSuccessCallback) {
         const formData = new FormData();
         formData.append("image", image);
         formData.append("uploaded_by", uploadedBy || "Anonymous");
-        formData.append("latitude", gps?.latitude || "");
-        formData.append("longitude", gps?.longitude || "");
+        formData.append("latitude", String(gps?.latitude ?? fallbackLatitude));
+        formData.append("longitude", String(gps?.longitude ?? fallbackLongitude));
         formData.append("location_name", locationName || "Unknown");
 
         try {
@@ -28,6 +31,10 @@ export function useUpload(onSuccessCallback) {
 
             if (!res.ok) {
                 throw new Error(data.error || "Upload failed. Please try again.");
+            }
+
+            if (typeof window !== "undefined" && data?.image) {
+                window.dispatchEvent(new CustomEvent(IMAGE_UPLOADED_EVENT, { detail: { image: data.image } }));
             }
 
             toast.success("Horizon archived successfully.");
