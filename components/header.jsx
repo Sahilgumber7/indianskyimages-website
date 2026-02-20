@@ -77,7 +77,7 @@ export default function Header({
           <button
             onClick={() => setIsGlobeView((prev) => !prev)}
             className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/10 text-black dark:text-white hover:scale-105 transition-transform"
-            aria-label="Toggle View"
+            aria-label={isGlobeView ? "Switch to map view" : "Switch to globe view"}
           >
             {isGlobeView ? <CiMap className="text-xl" /> : <IoEarthOutline className="text-xl" />}
           </button>
@@ -102,6 +102,12 @@ export default function Header({
             </Button>
           </Link>
 
+          <Link href="/states">
+            <Button variant="ghost" className="rounded-full px-6 font-semibold text-sm hover:bg-black/5 dark:hover:bg-white/10">
+              States
+            </Button>
+          </Link>
+
           {/* Primary Upload */}
           <Button
             onClick={() => setIsDialogOpen(true)}
@@ -118,12 +124,14 @@ export default function Header({
         <Button
           onClick={() => setIsDialogOpen(true)}
           className="bg-black dark:bg-white text-white dark:text-black rounded-full w-9 h-9 sm:w-10 sm:h-10 p-0 flex items-center justify-center"
+          aria-label="Upload image"
         >
           <LuUpload className="text-base sm:text-lg" />
         </Button>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/10 text-black dark:text-white"
+          aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
         >
           {mobileMenuOpen ? <HiX className="text-lg sm:text-xl" /> : <HiMenu className="text-lg sm:text-xl" />}
         </button>
@@ -145,6 +153,13 @@ export default function Header({
             <div className="flex items-center gap-4 p-4 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
               <LuImage className="text-xl" />
               <span className="font-semibold">Gallery</span>
+            </div>
+          </Link>
+
+          <Link href="/states" onClick={() => setMobileMenuOpen(false)}>
+            <div className="flex items-center gap-4 p-4 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+              <LuImage className="text-xl" />
+              <span className="font-semibold">States</span>
             </div>
           </Link>
 

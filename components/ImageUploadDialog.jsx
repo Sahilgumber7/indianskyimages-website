@@ -24,9 +24,22 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
   const [uploadedBy, setUploadedBy] = useState("");
   const [error, setError] = useState(null);
   const [previewLocationName, setPreviewLocationName] = useState("");
+  const [locationMode, setLocationMode] = useState("auto");
+  const [manualLatitude, setManualLatitude] = useState("");
+  const [manualLongitude, setManualLongitude] = useState("");
 
   const preview = selectedItems[0]?.preview || null;
-  const previewGps = selectedItems[0]?.gps || null;
+  const exifGps = selectedItems[0]?.gps || null;
+  const manualGps =
+    manualLatitude !== "" && manualLongitude !== ""
+      ? { latitude: Number(manualLatitude), longitude: Number(manualLongitude) }
+      : null;
+  const previewGps =
+    locationMode === "manual"
+      ? manualGps
+      : locationMode === "none"
+        ? null
+        : exifGps;
 
   const { uploadImage, uploadImages, uploading, uploadStats, error: uploadError } = useUpload(() => {
     setIsDialogOpen(false);
@@ -37,18 +50,23 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
     setSelectedItems([]);
     setUploadedBy("");
     setPreviewLocationName("");
+    setLocationMode("auto");
+    setManualLatitude("");
+    setManualLongitude("");
     setError(null);
   }, []);
 
   useEffect(() => {
-    if (!previewGps) {
+    const lat = Number(previewGps?.latitude);
+    const lon = Number(previewGps?.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
       setPreviewLocationName("");
       return;
     }
 
     const fetchName = async () => {
       try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${previewGps.latitude}&lon=${previewGps.longitude}`);
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
         const data = await res.json();
         if (data && data.address) {
           const addr = data.address;
@@ -79,8 +97,17 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
     });
 
   const readFiles = async (fileList) => {
-    const files = Array.from(fileList || []).filter((file) => file?.type?.startsWith("image/"));
+    const accepted = Array.from(fileList || []);
+    const files = accepted.filter((file) => file?.type?.startsWith("image/"));
     if (files.length === 0) return;
+    if (files.length !== accepted.length) {
+      setError("Only image files are supported.");
+      return;
+    }
+    if (files.some((file) => file.size > 10 * 1024 * 1024)) {
+      setError("Each image must be 10MB or smaller.");
+      return;
+    }
     setError(null);
 
     const items = await Promise.all(
@@ -106,6 +133,7 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
     );
 
     setSelectedItems(items);
+    setLocationMode(items[0]?.gps ? "auto" : "none");
   };
 
   return (
@@ -170,6 +198,56 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
                     Uploading {uploadStats.completed} / {uploadStats.total}
                   </p>
                 )}
+
+                <div className="rounded-2xl border border-gray-100 dark:border-gray-800 p-3 sm:p-4 space-y-3 bg-black/[0.02] dark:bg-white/[0.02]">
+                  <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.18em] text-black/40 dark:text-white/40">
+                    Location Mode
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setLocationMode("auto")}
+                      className={`h-10 rounded-xl border text-xs font-bold uppercase tracking-wider ${locationMode === "auto" ? "bg-black text-white dark:bg-white dark:text-black" : "bg-transparent border-black/10 dark:border-white/10"}`}
+                    >
+                      EXIF Auto
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLocationMode("manual")}
+                      className={`h-10 rounded-xl border text-xs font-bold uppercase tracking-wider ${locationMode === "manual" ? "bg-black text-white dark:bg-white dark:text-black" : "bg-transparent border-black/10 dark:border-white/10"}`}
+                    >
+                      Manual Pin
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLocationMode("none")}
+                      className={`h-10 rounded-xl border text-xs font-bold uppercase tracking-wider ${locationMode === "none" ? "bg-black text-white dark:bg-white dark:text-black" : "bg-transparent border-black/10 dark:border-white/10"}`}
+                    >
+                      No Location
+                    </button>
+                  </div>
+
+                  {locationMode === "manual" && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder="Latitude"
+                        value={manualLatitude}
+                        onChange={(e) => setManualLatitude(e.target.value)}
+                        className="h-10 rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-3 text-sm outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
+                      />
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder="Longitude"
+                        value={manualLongitude}
+                        onChange={(e) => setManualLongitude(e.target.value)}
+                        className="h-10 rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-3 text-sm outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Error messages */}
@@ -185,19 +263,44 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
             <div className="flex gap-4 w-full sm:w-auto order-1 sm:order-2">
               <Button
                 onClick={async () => {
-                  if (!previewGps && preview) {
-                    toast.info("No GPS found. Using default map location.");
+                  const resolvedGps =
+                    locationMode === "manual"
+                      ? manualGps
+                      : locationMode === "none"
+                        ? null
+                        : previewGps;
+                  const resolvedLocation =
+                    locationMode === "none"
+                      ? ""
+                      : previewLocationName || "Unknown";
+
+                  if (locationMode === "manual" && (!manualGps || Number.isNaN(manualGps.latitude) || Number.isNaN(manualGps.longitude))) {
+                    toast.error("Enter a valid latitude and longitude.");
+                    return;
                   }
+
                   if (selectedItems.length > 1) {
-                    await uploadImages({ items: selectedItems, uploadedBy });
+                    await uploadImages({
+                      items: selectedItems.map((item) => ({
+                        ...item,
+                        gps:
+                          locationMode === "manual"
+                            ? manualGps
+                            : locationMode === "none"
+                              ? null
+                              : item.gps,
+                        locationName: resolvedLocation,
+                      })),
+                      uploadedBy,
+                    });
                     return;
                   }
 
                   await uploadImage({
                     image: selectedItems[0]?.image,
                     uploadedBy,
-                    gps: selectedItems[0]?.gps,
-                    locationName: previewLocationName || "Unknown",
+                    gps: resolvedGps,
+                    locationName: resolvedLocation,
                   });
                 }}
                 disabled={uploading || selectedItems.length === 0}

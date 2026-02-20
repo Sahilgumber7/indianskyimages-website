@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 const CACHE_TTL_MS = 60 * 1000;
-const STORAGE_KEY = "isi_images_cache_v1";
+const STORAGE_KEY = "isi_images_cache_v2";
 export const IMAGE_UPLOADED_EVENT = "isi:image-uploaded";
 let cachedImages = null;
 let cacheTimestamp = 0;
@@ -29,10 +29,7 @@ function readStorageCache() {
 function writeStorageCache(images, timestamp) {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ images, timestamp })
-    );
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ images, timestamp }));
   } catch {
     // ignore storage quota/errors
   }
@@ -46,37 +43,101 @@ function prependUniqueImage(list, image) {
   return [image, ...existing];
 }
 
-async function fetchImagesWithCache({ force = false } = {}) {
-  if (!force && isCacheFresh()) {
-    return { images: cachedImages, fromCache: true };
+function buildQueryString(filters, page, limit) {
+  const params = new URLSearchParams();
+  if (filters.q) params.set("q", filters.q);
+  if (filters.state) params.set("state", filters.state);
+  if (filters.uploader) params.set("uploader", filters.uploader);
+  if (filters.dateFrom) params.set("dateFrom", filters.dateFrom);
+  if (filters.dateTo) params.set("dateTo", filters.dateTo);
+  if (filters.bbox) params.set("bbox", filters.bbox);
+  if (filters.includeNoLocation) params.set("includeNoLocation", "true");
+  params.set("page", String(page || 1));
+  params.set("limit", String(limit || 40));
+  return params.toString();
+}
+
+function isDefaultQuery(filters, page, limit) {
+  const hasFilters = Boolean(
+    filters.q ||
+      filters.state ||
+      filters.uploader ||
+      filters.dateFrom ||
+      filters.dateTo ||
+      filters.bbox ||
+      filters.includeNoLocation
+  );
+  return !hasFilters && (page || 1) === 1 && (limit || 40) === 40;
+}
+
+async function fetchImages({ filters, page, limit, force = false }) {
+  const isDefault = isDefaultQuery(filters, page, limit);
+  if (isDefault && !force && isCacheFresh()) {
+    return {
+      images: cachedImages,
+      pagination: { page: 1, limit: 40, hasMore: false, total: cachedImages.length },
+      topStates: [],
+      leaderboards: { week: [], month: [] },
+      fromCache: true,
+    };
   }
 
-  if (!force && inflightRequest) {
+  if (isDefault && !force && inflightRequest) {
     return inflightRequest;
   }
 
-  inflightRequest = fetch("/api/images", { cache: force ? "no-store" : "default" })
+  const query = buildQueryString(filters, page, limit);
+  const request = fetch(`/api/images?${query}`, {
+    cache: force ? "no-store" : "default",
+  })
     .then(async (res) => {
       const json = await res.json();
       if (!res.ok) {
         throw new Error(json.error || "Failed to fetch images");
       }
-      cachedImages = json.data || [];
-      cacheTimestamp = Date.now();
-      writeStorageCache(cachedImages, cacheTimestamp);
-      return { images: cachedImages, fromCache: false };
+      const nextImages = json.data || [];
+      if (isDefault) {
+        cachedImages = nextImages;
+        cacheTimestamp = Date.now();
+        writeStorageCache(cachedImages, cacheTimestamp);
+      }
+      return {
+        images: nextImages,
+        pagination: json.pagination || {
+          page: page || 1,
+          limit: limit || 40,
+          hasMore: false,
+          total: nextImages.length,
+        },
+        topStates: json.topStates || [],
+        leaderboards: json.leaderboards || { week: [], month: [] },
+        fromCache: false,
+      };
     })
     .finally(() => {
-      inflightRequest = null;
+      if (isDefault) {
+        inflightRequest = null;
+      }
     });
 
-  return inflightRequest;
+  if (isDefault) {
+    inflightRequest = request;
+  }
+  return request;
 }
 
-export function useImages({ enabled = false } = {}) {
+export function useImages({ enabled = false, filters = {}, page = 1, limit = 40 } = {}) {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(enabled);
   const [error, setError] = useState(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit,
+    total: 0,
+    hasMore: false,
+  });
+  const [topStates, setTopStates] = useState([]);
+  const [leaderboards, setLeaderboards] = useState({ week: [], month: [] });
 
   useEffect(() => {
     if (!enabled) {
@@ -85,53 +146,57 @@ export function useImages({ enabled = false } = {}) {
     }
 
     let cancelled = false;
+    const isDefault = isDefaultQuery(filters, page, limit);
 
     const stored = readStorageCache();
-    if (stored && !cachedImages) {
+    if (isDefault && stored && !cachedImages) {
       cachedImages = stored.images;
       cacheTimestamp = stored.timestamp;
     }
 
-    if (cachedImages && !cancelled) {
+    if (isDefault && cachedImages && !cancelled) {
       setImages(cachedImages);
+      setPagination({ page: 1, limit: 40, total: cachedImages.length, hasMore: false });
       setLoading(false);
     }
 
-    async function loadAndRefresh(force = false) {
+    async function load(force = false) {
       try {
-        const { images: freshImages, fromCache } = await fetchImagesWithCache({ force });
+        setLoading(true);
+        const response = await fetchImages({ filters, page, limit, force });
         if (!cancelled) {
-          setImages(freshImages);
-          if (!fromCache) {
-            setError(null);
-          }
+          setImages(response.images);
+          setPagination(response.pagination);
+          setTopStates(response.topStates);
+          setLeaderboards(response.leaderboards || { week: [], month: [] });
+          setError(null);
         }
       } catch (err) {
-        if (!cancelled && !cachedImages) {
+        if (!cancelled) {
           setError(err);
-          setLoading(false);
         }
         console.error("Fetch error:", err);
       } finally {
-        if (!cancelled && !cachedImages) {
+        if (!cancelled) {
           setLoading(false);
         }
       }
     }
 
-    loadAndRefresh();
+    load();
 
     const onImageUploaded = (event) => {
       const uploadedImage = event?.detail?.image;
-      if (!uploadedImage) {
-        return;
+      if (!uploadedImage) return;
+
+      if (isDefault) {
+        cachedImages = prependUniqueImage(cachedImages, uploadedImage);
+        cacheTimestamp = Date.now();
+        writeStorageCache(cachedImages, cacheTimestamp);
+        setImages((prev) => prependUniqueImage(prev, uploadedImage));
       }
 
-      cachedImages = prependUniqueImage(cachedImages, uploadedImage);
-      cacheTimestamp = Date.now();
-      writeStorageCache(cachedImages, cacheTimestamp);
-      setImages((prev) => prependUniqueImage(prev, uploadedImage));
-      loadAndRefresh(true);
+      load(true);
     };
 
     if (typeof window !== "undefined") {
@@ -144,12 +209,17 @@ export function useImages({ enabled = false } = {}) {
         window.removeEventListener(IMAGE_UPLOADED_EVENT, onImageUploaded);
       }
     };
-  }, [enabled]);
+  }, [enabled, page, limit, filters.q, filters.state, filters.uploader, filters.dateFrom, filters.dateTo, filters.bbox, filters.includeNoLocation]);
 
   const mapImages = useMemo(
-    () => images.filter((img) => img.latitude && img.longitude),
+    () =>
+      images.filter((img) => {
+        const lat = Number(img.latitude);
+        const lng = Number(img.longitude);
+        return Number.isFinite(lat) && Number.isFinite(lng);
+      }),
     [images]
   );
 
-  return { images, mapImages, loading, error };
+  return { images, mapImages, loading, error, pagination, topStates, leaderboards };
 }

@@ -6,7 +6,7 @@ import { useImages } from "../hooks/useImage";
 export default function GlobeView() {
   const globeRef = useRef(null);
   const globeInstanceRef = useRef(null);
-  const { images } = useImages({ enabled: true });
+  const { images } = useImages({ enabled: true, limit: 300 });
 
   useEffect(() => {
     if (!globeRef.current || images.length === 0) {

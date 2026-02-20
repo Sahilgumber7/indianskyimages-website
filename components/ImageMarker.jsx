@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import L from "leaflet";
 import { Marker, Popup } from "react-leaflet";
 import MarkerPopupContent from "./MarkerPopupContent";
+import { buildFastImageUrl } from "../lib/images";
 
 // Apple Photos Style Marker - Premium Square Thumbnail (Full Color)
 const createCustomIcon = (url) => {
@@ -59,13 +60,28 @@ const createCustomIcon = (url) => {
   });
 };
 
-export default function ImageMarker({ img }) {
+export default function ImageMarker({ img, onPreview }) {
   const lat = parseFloat(img.latitude);
   const lon = parseFloat(img.longitude);
-
-  const icon = useMemo(() => createCustomIcon(img.image_url), [img.image_url]);
+  const thumbUrl = useMemo(
+    () => buildFastImageUrl(img.image_url, { width: 240, quality: "auto:good" }),
+    [img.image_url]
+  );
+  const icon = useMemo(() => createCustomIcon(thumbUrl), [thumbUrl]);
 
   if (isNaN(lat) || isNaN(lon)) return null;
+
+  if (typeof onPreview === "function") {
+    return (
+      <Marker
+        position={[lat, lon]}
+        icon={icon}
+        eventHandlers={{
+          click: () => onPreview(img),
+        }}
+      />
+    );
+  }
 
   return (
     <Marker position={[lat, lon]} icon={icon}>

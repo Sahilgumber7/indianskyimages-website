@@ -156,6 +156,11 @@
     @apply bg-background text-foreground;
   }
 
+  :focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
@@ -163,5 +168,50 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  .isi-shell {
+    @apply min-h-screen bg-white dark:bg-black transition-colors duration-700;
+  }
+
+  .isi-container {
+    @apply max-w-6xl mx-auto px-4 sm:px-8 py-24;
+  }
+
+  .isi-surface {
+    @apply rounded-[1.5rem] sm:rounded-[2rem] border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-xl;
+  }
+
+  .isi-label {
+    @apply text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] text-black/45 dark:text-white/45;
+  }
+
+  .isi-chip {
+    @apply inline-flex items-center rounded-full border border-black/10 dark:border-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-black/60 dark:text-white/60;
+  }
+
+  .isi-btn {
+    @apply inline-flex h-10 items-center justify-center rounded-full border border-black/10 dark:border-white/10 px-4 text-[11px] font-black uppercase tracking-widest text-black dark:text-white transition-all active:scale-95;
+  }
+
+  .isi-btn-primary {
+    @apply bg-black text-white border-black dark:bg-white dark:text-black dark:border-white;
+  }
+
+  .isi-btn-danger {
+    @apply border-red-300/80 text-red-700 dark:text-red-300;
   }
 }
