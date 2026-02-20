@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Gallery from "../../components/Gallery";
 import Header from "../../components/header";
 import SiteFooter from "../../components/SiteFooter";
@@ -23,7 +23,15 @@ export default function GalleryPage() {
       <main
         className={`relative w-full transition-all duration-700 ${isDialogOpen ? "blur-xl" : ""}`}
       >
-        <Gallery />
+        <Suspense
+          fallback={
+            <div className="min-h-[40vh] flex items-center justify-center">
+              <div className="w-10 h-10 border border-black/20 dark:border-white/20 border-t-black dark:border-t-white rounded-full animate-spin" />
+            </div>
+          }
+        >
+          <Gallery />
+        </Suspense>
       </main>
       <SiteFooter />
     </div>
