@@ -133,7 +133,7 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
     );
 
     setSelectedItems(items);
-    setLocationMode(items[0]?.gps ? "auto" : "none");
+    setLocationMode("auto");
   };
 
   return (
@@ -203,29 +203,16 @@ export default function ImageUploadDialog({ isDialogOpen, setIsDialogOpen }) {
                   <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.18em] text-black/40 dark:text-white/40">
                     Location Mode
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setLocationMode("auto")}
-                      className={`h-10 rounded-xl border text-xs font-bold uppercase tracking-wider ${locationMode === "auto" ? "bg-black text-white dark:bg-white dark:text-black" : "bg-transparent border-black/10 dark:border-white/10"}`}
-                    >
-                      EXIF Auto
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setLocationMode("manual")}
-                      className={`h-10 rounded-xl border text-xs font-bold uppercase tracking-wider ${locationMode === "manual" ? "bg-black text-white dark:bg-white dark:text-black" : "bg-transparent border-black/10 dark:border-white/10"}`}
-                    >
-                      Manual Pin
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setLocationMode("none")}
-                      className={`h-10 rounded-xl border text-xs font-bold uppercase tracking-wider ${locationMode === "none" ? "bg-black text-white dark:bg-white dark:text-black" : "bg-transparent border-black/10 dark:border-white/10"}`}
-                    >
-                      No Location
-                    </button>
-                  </div>
+                  <select
+                    value={locationMode}
+                    onChange={(e) => setLocationMode(e.target.value)}
+                    className="h-10 w-full rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-3 text-xs font-bold uppercase tracking-wider focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black dark:focus-visible:ring-white"
+                    aria-label="Location mode"
+                  >
+                    <option value="auto">EXIF Auto</option>
+                    <option value="manual">Manual Pin</option>
+                    <option value="none">No Location</option>
+                  </select>
 
                   {locationMode === "manual" && (
                     <div className="grid grid-cols-2 gap-2">
