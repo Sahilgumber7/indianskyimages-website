@@ -26,6 +26,7 @@ const GlobeView = dynamic(() => import("../components/GlobeView"), {
 export default function Home() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isGlobeView, setIsGlobeView] = useState(false);
+  const [daysWindow, setDaysWindow] = useState(0);
   const { resolvedTheme } = useTheme();
 
   const isDark = resolvedTheme === "dark";
@@ -41,10 +42,12 @@ export default function Home() {
         setIsDialogOpen={setIsDialogOpen}
         isGlobeView={isGlobeView}
         setIsGlobeView={setIsGlobeView}
+        daysWindow={daysWindow}
+        setDaysWindow={setDaysWindow}
       />
 
       <div className={`relative w-full h-screen transition-all duration-700 ${isDialogOpen ? "blur-xl" : ""}`}>
-        {isGlobeView ? <GlobeView /> : <MapView darkMode={isDark} />}
+        {isGlobeView ? <GlobeView /> : <MapView darkMode={isDark} daysWindow={daysWindow} />}
       </div>
       <SiteFooter />
     </main>

@@ -201,12 +201,11 @@ function LocateControl() {
   );
 }
 
-export default function MapView({ darkMode }) {
+export default function MapView({ darkMode, daysWindow = 0 }) {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedClusterImages, setSelectedClusterImages] = useState(null);
   const [currentIdx, setCurrentIdx] = useState(0);
-  const [daysWindow, setDaysWindow] = useState(0);
   const [bbox, setBbox] = useState("");
   const [isImageLoading, setIsImageLoading] = useState(true);
   const [hasImageError, setHasImageError] = useState(false);
@@ -338,24 +337,6 @@ export default function MapView({ darkMode }) {
           />
         )}
       </MapContainer>
-
-      <div className="absolute left-3 top-20 z-[500] rounded-2xl border border-black/10 dark:border-white/10 bg-white/85 dark:bg-black/75 backdrop-blur-xl px-3 py-2 w-[180px]">
-        <label className="block text-[10px] font-bold uppercase tracking-widest text-black/50 dark:text-white/50 mb-1">
-          Time Window
-        </label>
-        <input
-          type="range"
-          min="0"
-          max="365"
-          value={daysWindow}
-          onChange={(e) => setDaysWindow(Number(e.target.value))}
-          className="w-full"
-          aria-label="Filter images by days"
-        />
-        <p className="text-[10px] mt-1 text-black/60 dark:text-white/60">
-          {daysWindow === 0 ? "All time" : `Last ${daysWindow} days`}
-        </p>
-      </div>
 
       <Dialog open={!!selectedClusterImages} onOpenChange={(open) => !open && setSelectedClusterImages(null)}>
         <DialogContent className="w-[min(96vw,72rem)] h-[min(92dvh,52rem)] sm:h-[min(88dvh,52rem)] p-0 overflow-hidden bg-white/95 dark:bg-black/95 backdrop-blur-3xl border border-white/20 dark:border-white/10 rounded-[1.1rem] sm:rounded-[2.5rem] md:rounded-[3rem] shadow-[0_50px_100px_rgba(0,0,0,0.5)] transition-all duration-500 animate-in fade-in zoom-in-95 focus:outline-none">

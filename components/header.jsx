@@ -21,9 +21,11 @@ export default function Header({
   setIsDialogOpen,
   isGlobeView,
   setIsGlobeView,
+  daysWindow,
+  setDaysWindow,
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -34,21 +36,37 @@ export default function Header({
     setTheme(resolvedTheme === "dark" ? "light" : "dark");
   };
 
-  const isDark = mounted && (theme === "dark" || resolvedTheme === "dark");
+  const showTimeWindowSlider =
+    typeof daysWindow === "number" && typeof setDaysWindow === "function";
 
   return (
     <header className="fixed top-3 sm:top-6 left-1/2 -translate-x-1/2 w-[calc(100%-1rem)] sm:w-[95%] max-w-7xl px-3 sm:px-6 py-2.5 sm:py-3 bg-white/70 dark:bg-black/70 backdrop-blur-2xl border border-white/20 dark:border-white/10 rounded-[1.25rem] sm:rounded-[2rem] shadow-[0_8px_32px_rgba(0,0,0,0.1)] z-50 flex justify-between items-center transition-all duration-700 animate-in fade-in slide-in-from-top-4">
-      {/* Apple-style Logo */}
+      {/* Brand + timeline control */}
       <div className="flex items-center gap-4">
         <Link href="/">
           <span className="font-bold text-base sm:text-xl md:text-2xl text-black dark:text-white tracking-tight hover:opacity-70 transition-opacity cursor-pointer">
             indianskyimages.
           </span>
         </Link>
-        <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-black/5 dark:bg-white/10 border border-black/5 dark:border-white/5">
-          <div className="w-1.5 h-1.5 rounded-full bg-black dark:bg-white animate-pulse" />
-          <span className="text-[10px] font-bold uppercase tracking-widest text-black/60 dark:text-white/60">Live Archive</span>
-        </div>
+        {showTimeWindowSlider && (
+          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/5 dark:bg-white/10 border border-black/5 dark:border-white/5 min-w-[220px]">
+            <label className="text-[10px] font-bold uppercase tracking-widest text-black/60 dark:text-white/60 whitespace-nowrap">
+              Time Window
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="365"
+              value={daysWindow}
+              onChange={(e) => setDaysWindow(Number(e.target.value))}
+              className="w-full"
+              aria-label="Filter images by days"
+            />
+            <span className="text-[10px] font-bold text-black/60 dark:text-white/60 whitespace-nowrap">
+              {daysWindow === 0 ? "All" : `${daysWindow}d`}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Modern Desktop Menu */}
@@ -75,7 +93,7 @@ export default function Header({
         <div className="flex items-center gap-3">
           {/* View Toggle */}
           <button
-            onClick={() => setIsGlobeView((prev) => !prev)}
+            onClick={() => setIsGlobeView?.((prev) => !prev)}
             className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/10 text-black dark:text-white hover:scale-105 transition-transform"
             aria-label={isGlobeView ? "Switch to map view" : "Switch to globe view"}
           >
@@ -142,7 +160,12 @@ export default function Header({
         <div className="absolute top-[calc(100%+12px)] right-0 w-[min(18rem,calc(100vw-1rem))] max-h-[70dvh] overflow-y-auto bg-white/90 dark:bg-black/90 backdrop-blur-2xl border border-white/20 dark:border-white/10 rounded-[1.25rem] sm:rounded-[2rem] p-3 sm:p-4 flex flex-col gap-2 shadow-2xl animate-in fade-in slide-in-from-top-4">
           {/* Mobile Items */}
           <button
-            onClick={() => { setIsGlobeView(!isGlobeView); setMobileMenuOpen(false); }}
+            onClick={() => {
+              if (typeof setIsGlobeView === "function") {
+                setIsGlobeView(!isGlobeView);
+              }
+              setMobileMenuOpen(false);
+            }}
             className="flex items-center gap-4 p-4 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 text-left transition-colors"
           >
             {isGlobeView ? <CiMap className="text-xl" /> : <IoEarthOutline className="text-xl" />}
